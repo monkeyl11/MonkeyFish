@@ -7,10 +7,13 @@ class Board {
 
     public Board() {
         board = new ChessPiece[8][8];
+    }
+
+    public void setUpBoard() {
         
     }
 
-    public ChessPiece getPieceFromSquare(byte square, Board b) {
-        return board[][];
+    public ChessPiece getPieceFromSquare(byte square) { 
+        return board[(square & bitmaskFile) >>> 3][square & bitmaskRank];
     }
 }

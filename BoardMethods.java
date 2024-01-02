@@ -7,8 +7,30 @@ class BoardMethods {
     private static final byte bitmaskFile = 0b00111000;
 
     public static String squareToString(byte square) {
-        return letters[(square & bitmaskFile) >> 3] + (int)(square & bitmaskRank);
+        return letters[(square & bitmaskFile) >> 3] + ((int)(square & bitmaskRank) + 1);
     }
+
+    public static int getFile(byte square) {
+        return (int)(square & bitmaskFile) >> 3;
+    }
+
+    public static int getRank(byte square) {
+        return (int)(square & bitmaskRank);
+    }
+
+    public static int[] byteToArray(byte square) {
+        int[] ret = {getFile(square), getRank(square)};
+        return ret;
+    }
+
+    public static byte arrayToByte(int[] arr) {
+        if (arr.length != 2) {
+            System.out.println("bad input");
+        }
+        return (byte)(arr[0] * 8 + arr[1]);
+    }
+
+
 
 
 }

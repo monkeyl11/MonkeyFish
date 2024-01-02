@@ -1,7 +1,8 @@
 import java.util.*;
 
 abstract class ChessPiece {
-    protected double pieceMaterialValue;
+    public PieceID id;
+    public double pieceMaterialValue;
     protected byte currentSquare;
 
     public ChessPiece(double pieceMaterialValue, byte currentSquare, String pieceName) {

@@ -9,7 +9,7 @@ class Pawn extends ChessPiece {
         //add pawn to square currentSquare
         super(1, currentSquare, "Pawn");
         this.board = board;
-
+        id = PieceID.PAWN;
     }
 
     public List<Move> LegalMoves() {
