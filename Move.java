@@ -1,8 +1,10 @@
+import java.util.*;
+
 class Move {
     public static final int LAST_RANK_WHITE = 7;
     public static final int LAST_RANK_BLACK = 0;
 
-    public boolean whiteToMove; //whos turn it is
+    public Color color; //whos turn it is
 
     public boolean isKingsideCastle = false;
     public boolean isQueensideCastle = false;
@@ -12,16 +14,16 @@ class Move {
     public byte endSquare;
     
     //Non-castling
-    public Move(Board b, byte startSquare, byte endSquare, boolean whiteToMove, 
+    public Move(Board b, byte startSquare, byte endSquare, Color color, 
                 PieceID promotionPiece, boolean isEnPassant) {
-        this.whiteToMove = whiteToMove;
+        this.color = color;
         this.startSquare = startSquare;
         this.endSquare = endSquare;
         ChessPiece targetPiece = b.getPieceFromSquare(startSquare);
         //Check if castling
         if (targetPiece.id == PieceID.PAWN) {
-            if ((BoardMethods.getRank(endSquare) == LAST_RANK_WHITE && whiteToMove) ||
-                 BoardMethods.getRank(endSquare) == LAST_RANK_BLACK && !whiteToMove) {
+            if ((BoardMethods.getRank(endSquare) == LAST_RANK_WHITE && color == Color.WHITE) ||
+                 BoardMethods.getRank(endSquare) == LAST_RANK_BLACK && color == Color.BLACK) {
                 isPromotion = promotionPiece;
             }
         }
@@ -33,16 +35,27 @@ class Move {
         }   
     }
 
-    
+    public Move(Board b, byte startSquare, byte endSquare, Color color) {
+        this(b, startSquare, endSquare, color, PieceID.NONE, false);
+    }
 
     //Castling
-    public Move(boolean whiteToMove, boolean isKingsideCastle, boolean isQueensideCastle) {
-        this.whiteToMove = whiteToMove;
+    public Move(Color color, boolean isKingsideCastle, boolean isQueensideCastle) {
+        this.color = color;
         this.isKingsideCastle = isKingsideCastle;
         this.isQueensideCastle = isQueensideCastle;
     }
 
     public String toString() {
-        return null;
+        if (isKingsideCastle) {
+            return "O-O";
+        }
+        else if (isQueensideCastle) {
+            return "O-O-O";
+        }
+        if (capturedPiece != null) {
+            return BoardMethods.squareToString(startSquare) + " x " + BoardMethods.squareToString(endSquare);
+        }
+        return BoardMethods.squareToString(startSquare) + " - " + BoardMethods.squareToString(endSquare);
     }
 }

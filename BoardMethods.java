@@ -30,7 +30,42 @@ class BoardMethods {
         return (byte)(arr[0] * 8 + arr[1]);
     }
 
-
+    public static String boardToString(Board b) {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < 64; i++) {
+            int[] square = byteToArray((byte)i);
+            ChessPiece p = b.board[square[1]][square[0]];
+            if (p == null) {
+                s.append("-- ");
+            }
+            else {
+                String color = p.pieceColor == Color.WHITE ? "W" : "B";
+                if (p.id == PieceID.PAWN) {
+                    s.append(color + "P ");
+                }
+                else if (p.id == PieceID.KNIGHT) {
+                    s.append(color + "N ");
+                }
+                else if (p.id == PieceID.BISHOP) {
+                    s.append(color + "B ");
+                }
+                else if (p.id == PieceID.ROOK) {
+                    s.append(color + "R ");
+                }
+                else if (p.id == PieceID.QUEEN) {
+                    s.append(color + "Q ");
+                }
+                else if (p.id == PieceID.KING) {
+                    s.append(color + "K ");
+                }
+            }
+            
+            if (i % 8 == 7) {
+                s.append("\n");
+            }
+        }
+        return s.toString();
+    }
 
 
 }
