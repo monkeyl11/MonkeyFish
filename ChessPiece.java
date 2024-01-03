@@ -33,12 +33,12 @@ abstract class ChessPiece {
             ChessPiece p = b.board[file][rank];
             if (p != null) {
                 if (p.pieceColor != this.pieceColor) {
-                    moveList.add(new Move(b , this.currentSquare, (byte)((file << 3) + rank), this.pieceColor));
+                    moveList.add(new Move(this, p, (byte)((file << 3) + rank), this.pieceColor));
                 }
                 break;
             }
             else {
-                moveList.add(new Move(b , this.currentSquare, (byte)((file << 3) + rank), this.pieceColor));
+                moveList.add(new Move(this, null, (byte)((file << 3) + rank), this.pieceColor));
             }
         }
     }

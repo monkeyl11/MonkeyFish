@@ -30,11 +30,25 @@ class BoardMethods {
         return (byte)(arr[0] * 8 + arr[1]);
     }
 
+    public static boolean checkBoardConsistency(Board b) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (b.board[i][j] != null) {
+                    if (i * 8 + j != b.board[i][j].currentSquare) {
+                        System.out.println("Board inconsistency at " + squareToString((byte)(i * 8 + j)));
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     public static String boardToString(Board b) {
         StringBuilder s = new StringBuilder();
         for (int i = 0; i < 64; i++) {
             int[] square = byteToArray((byte)i);
-            ChessPiece p = b.board[square[1]][square[0]];
+            ChessPiece p = b.board[square[1]][b.board.length - square[0] - 1];
             if (p == null) {
                 s.append("-- ");
             }

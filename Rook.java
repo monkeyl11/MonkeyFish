@@ -11,6 +11,10 @@ class Rook extends ChessPiece {
     }
 
     public void legalMoves(Board b, List<Move> moveList) {
+        checkLine(b, moveList, 0, 1);
+        checkLine(b, moveList, 0, -1);
+        checkLine(b, moveList, 1, 0);
+        checkLine(b, moveList, -1, 0);
     }
 
     public boolean validCastling() {
