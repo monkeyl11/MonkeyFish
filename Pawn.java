@@ -1,13 +1,15 @@
 import java.util.*;
 
 class Pawn extends ChessPiece {
-    private int enPassantTurn = 0; //tracks what turn pawn can be en-passanted, 0 means none
+    //private int enPassantTurn = 0; //tracks what turn pawn can be en-passanted, 0 means none
     private final static int FIRST_RANK_WHITE = 1;
     private final static int LAST_RANK_WHITE = 7;
     private final static int EN_PASSANT_RANK_WHITE = 4;
     private final static int FIRST_RANK_BLACK = 6;
     private final static int LAST_RANK_BLACK = 0;
     private final static int EN_PASSANT_RANK_BLACK = 3;
+    
+    private boolean enPassant = false;;
 
     public Pawn(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
@@ -16,12 +18,7 @@ class Pawn extends ChessPiece {
     }
 
     //Method not in use as it cannot account for en passant
-    public void legalMoves(Board b, List<Move> moveList) {
-        System.out.println("wrong legalmoves method");
-        int x = 0/0; //lmao throw an exception pls
-    };
-
-    public void legalMoves(Board b, List<Move> moveList, int turn) {
+    public void possibleMoves(Board b, List<Move> moveList) {
         int pieceRank = this.currentSquare & bitmaskRank;
         int pieceFile = (this.currentSquare & bitmaskFile) >> 3;
         if (this.pieceColor == Color.WHITE) {
@@ -35,7 +32,7 @@ class Pawn extends ChessPiece {
                     moveList.add(new Move(this, null, targetSquare, this.pieceColor));
                     if (pieceRank == FIRST_RANK_WHITE && b.board[pieceFile][pieceRank + 2] == null) {
                         moveList.add(new Move(this, null, (byte)(targetSquare + 1), this.pieceColor));
-                        enPassantTurn = turn + 1; //next turn the pawn can be taken en passant
+                        enPassant = true; //next turn the pawn can be taken en passant
                     }
                 }
             }
@@ -60,7 +57,7 @@ class Pawn extends ChessPiece {
                         && b.board[pieceFile + i][pieceRank].pieceColor == Color.BLACK
                         && b.board[pieceFile + i][pieceRank].id == PieceID.PAWN) {
                         Pawn p = (Pawn)b.board[pieceFile + i][pieceRank];
-                        if (p.canEnPassant(turn))
+                        if (p.canEnPassant())
                             moveList.add(new Move(this, p, targetSquare, this.pieceColor));
                     }
                 }
@@ -78,7 +75,7 @@ class Pawn extends ChessPiece {
                     moveList.add(new Move(this, null, targetSquare, this.pieceColor));
                     if (pieceRank == FIRST_RANK_BLACK && b.board[pieceFile][pieceRank - 2] == null) {
                         moveList.add(new Move(this, null, (byte)(targetSquare - 1), this.pieceColor));
-                        enPassantTurn = turn + 1; //next turn the pawn can be taken en passant
+                        enPassant = true; //next turn the pawn can be taken en passant
                     }
                 }
             }
@@ -103,13 +100,13 @@ class Pawn extends ChessPiece {
                         && b.board[pieceFile + i][pieceRank].pieceColor == Color.WHITE
                         && b.board[pieceFile + i][pieceRank].id == PieceID.PAWN) {
                         Pawn p = (Pawn)b.board[pieceFile + i][pieceRank];
-                        if (p.canEnPassant(turn))
+                        if (p.canEnPassant())
                             moveList.add(new Move(this, p, targetSquare, this.pieceColor));
                     }
                 }
             }
         }
-    }
+    };
 
     public void addPromotions(byte endSquare, List<Move> moveList, ChessPiece capturedPiece) {
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.KNIGHT));
@@ -118,7 +115,7 @@ class Pawn extends ChessPiece {
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.QUEEN));
     }
 
-    public boolean canEnPassant(int currentTurn) {
-        return currentTurn == enPassantTurn;
+    public boolean canEnPassant() {
+        return enPassant;
     }
 }

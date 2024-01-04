@@ -16,7 +16,9 @@ abstract class ChessPiece {
         this.pieceColor = pieceColor;
     }
 
-    public void movePiece(byte newSquare) {
+    //undoMove parameter here for consistency's sake for movePiece method calls between different pieces
+    //Rook, King, and Pawn all require this parameter
+    public void movePiece(byte newSquare, boolean undoMove) {
         this.currentSquare = newSquare;
     }
 
@@ -43,7 +45,24 @@ abstract class ChessPiece {
         }
     }
 
-    abstract void legalMoves(Board b, List<Move> moveList);
+    abstract void possibleMoves(Board b, List<Move> moveList);
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof ChessPiece)) {
+            return false;
+        }
+        ChessPiece c = (ChessPiece)o;
+        return c.id == this.id && c.pieceColor == this.pieceColor;
+    }
+
+    //Mostly for debugging
+    public String toString() {
+        return pieceColor + " " + id + "-" + BoardMethods.squareToString(currentSquare);
+    }
 
 
 }

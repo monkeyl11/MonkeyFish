@@ -39,6 +39,38 @@ class Move {
         this.isQueensideCastle = isQueensideCastle;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Move)) {
+            return false;
+        }
+        Move m = (Move)o;
+        if (this.color == m.color) {
+            if (m.isKingsideCastle == true && this.isKingsideCastle == true)
+                return true;
+            else if (m.isQueensideCastle == true && this.isQueensideCastle == true)
+                return true;
+            else {
+                return m.promotionPiece == this.promotionPiece
+                        && m.targetPiece == this.targetPiece
+                        && m.capturedPiece == this.capturedPiece
+                        && m.startSquare == this.startSquare && m.endSquare == this.endSquare;
+            }
+        }
+        else {
+            return false;
+        }  
+    }
+
+    @Override
+    public int hashCode() {
+        //random function
+        return (color == Color.WHITE ? 1 : -1) * (endSquare * 100 + startSquare) * targetPiece.id.ordinal();
+    }
+
     public String toString() {
         if (isKingsideCastle) {
             return "O-O";

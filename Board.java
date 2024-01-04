@@ -91,7 +91,7 @@ class Board {
         }
         board[(end & bitmaskFile) >> 3][end & bitmaskRank] = p;
         board[(start & bitmaskFile) >> 3][start & bitmaskRank] = null;
-        p.movePiece(end);
+        p.movePiece(end, false);
     }
 
 
@@ -102,6 +102,31 @@ class Board {
 
     public ChessPiece getPieceFromSquare(byte square) { 
         return board[(square & bitmaskFile) >> 3][square & bitmaskRank];
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Board)) {
+            return false;
+        }
+        Board b = (Board)o;
+        for (byte i = 0; i < board.length * board.length; i++) {
+            ChessPiece thisPiece = this.getPieceFromSquare(i);
+            ChessPiece otherPiece = b.getPieceFromSquare(i);
+            if (thisPiece != null) {
+                if (!thisPiece.equals(otherPiece))
+                    return false;
+            }
+            else {
+                if (otherPiece != null) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public String toString() {

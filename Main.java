@@ -15,64 +15,69 @@ class Main {
         Pawn p = (Pawn)b.board[4][1];
         System.out.println(p.id);
         ArrayList<Move> moveList = new ArrayList<>();
-        p.legalMoves(b, moveList, 1);
+        p.possibleMoves(b, moveList);
         System.out.println(moveList);
         b.makeMove(moveList.get(1));
         BoardMethods.checkBoardConsistency(b);
 
         moveList.clear();
         Pawn p2 = (Pawn)b.board[3][6];
-        p2.legalMoves(b, moveList, 2);
+        p2.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(1));
         System.out.println(moveList);
 
         moveList.clear();
-        p.legalMoves(b, moveList, 3);
+        p.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(1));
         System.out.println(moveList);
 
         moveList.clear();
         Pawn p3 = (Pawn)b.board[2][6];
-        p3.legalMoves(b, moveList, 4);
+        p3.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(1));
         System.out.println(moveList);
 
         moveList.clear();
-        p.legalMoves(b, moveList, 5);
+        p.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(0));
         System.out.println(moveList);
 
         moveList.clear();
         Pawn p4 = (Pawn)b.board[4][6];
-        p4.legalMoves(b, moveList, 6);
+        p4.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(1));
         System.out.println(moveList);
 
         moveList.clear();
-        p.legalMoves(b, moveList, 7);
+        p.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(0));
         System.out.println(moveList);
 
         moveList.clear();
         Queen q = (Queen)b.board[3][7];
-        q.legalMoves(b, moveList);
+        q.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(3));
         System.out.println(moveList);
 
         moveList.clear();
-        p.legalMoves(b, moveList, 9);
+        p.possibleMoves(b, moveList);
         System.out.println(b);
         b.makeMove(moveList.get(11));
         System.out.println(moveList);
 
+        moveList.clear();
+        King k = (King)b.board[4][0];
+        k.possibleMoves(b, moveList);
         System.out.println(b);
+        //b.makeMove(moveList.get(11));
+        System.out.println(moveList);
         BoardMethods.checkBoardConsistency(b);
     }
 }

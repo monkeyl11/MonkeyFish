@@ -9,7 +9,7 @@ class Bishop extends ChessPiece {
         id = PieceID.BISHOP;
     }
 
-    public void legalMoves(Board b, List<Move> moveList) {
+    public void possibleMoves(Board b, List<Move> moveList) {
         checkLine(b, moveList, 1, 1);
         checkLine(b, moveList, -1, 1);
         checkLine(b, moveList, 1, -1);
