@@ -8,13 +8,13 @@ class Pawn extends ChessPiece {
     private final static int FIRST_RANK_BLACK = 6;
     private final static int LAST_RANK_BLACK = 0;
     private final static int EN_PASSANT_RANK_BLACK = 3;
-    
-    private boolean enPassant = false;;
+    private final static int INITIAL_PAWN_STEP = 2;
+    private boolean enPassant = false;
 
     public Pawn(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
         super(1, currentSquare, pieceColor);
-        id = PieceID.PAWN;
+        this.id = PieceID.PAWN;
     }
 
     //Method not in use as it cannot account for en passant
@@ -30,7 +30,7 @@ class Pawn extends ChessPiece {
                 }
                 else {
                     moveList.add(new Move(this, null, targetSquare, this.pieceColor));
-                    if (pieceRank == FIRST_RANK_WHITE && b.board[pieceFile][pieceRank + 2] == null) {
+                    if (pieceRank == FIRST_RANK_WHITE && b.board[pieceFile][pieceRank + INITIAL_PAWN_STEP] == null) {
                         moveList.add(new Move(this, null, (byte)(targetSquare + 1), this.pieceColor));
                         enPassant = true; //next turn the pawn can be taken en passant
                     }
@@ -73,7 +73,7 @@ class Pawn extends ChessPiece {
                 }
                 else {
                     moveList.add(new Move(this, null, targetSquare, this.pieceColor));
-                    if (pieceRank == FIRST_RANK_BLACK && b.board[pieceFile][pieceRank - 2] == null) {
+                    if (pieceRank == FIRST_RANK_BLACK && b.board[pieceFile][pieceRank - INITIAL_PAWN_STEP] == null) {
                         moveList.add(new Move(this, null, (byte)(targetSquare - 1), this.pieceColor));
                         enPassant = true; //next turn the pawn can be taken en passant
                     }
@@ -106,13 +106,24 @@ class Pawn extends ChessPiece {
                 }
             }
         }
-    };
+    }
 
     public void addPromotions(byte endSquare, List<Move> moveList, ChessPiece capturedPiece) {
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.KNIGHT));
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.BISHOP));
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.ROOK));
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.QUEEN));
+    }
+
+    public void movePiece(byte newSquare, boolean undoMove) {
+        super.movePiece(newSquare, false);
+        int rankDiff = BoardMethods.getRank(newSquare) - BoardMethods.getRank(this.currentSquare);
+        if (rankDiff == INITIAL_PAWN_STEP) {
+            enPassant = this.pieceColor == Color.WHITE ? true : false;
+        }
+        else if (rankDiff == -INITIAL_PAWN_STEP) {
+            enPassant = this.pieceColor == Color.BLACK ? true : false;
+        }
     }
 
     public boolean canEnPassant() {

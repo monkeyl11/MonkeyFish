@@ -31,7 +31,6 @@ abstract class ChessPiece {
         int file = BoardMethods.getFile(currentSquare);
         int rank = BoardMethods.getRank(currentSquare);
         while (withinBoard(file += fileIncrement, rank += rankIncrement)) {
-            System.out.println(BoardMethods.squareToString((byte)(8 * file + rank)));
             ChessPiece p = b.board[file][rank];
             if (p != null) {
                 if (p.pieceColor != this.pieceColor) {
@@ -56,7 +55,7 @@ abstract class ChessPiece {
             return false;
         }
         ChessPiece c = (ChessPiece)o;
-        return c.id == this.id && c.pieceColor == this.pieceColor;
+        return c.id == this.id && c.pieceColor == this.pieceColor && c.currentSquare == this.currentSquare;
     }
 
     //Mostly for debugging

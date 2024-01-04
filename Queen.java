@@ -6,7 +6,7 @@ class Queen extends ChessPiece {
     public Queen(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
         super(9, currentSquare, pieceColor);
-        id = PieceID.QUEEN;
+        this.id = PieceID.QUEEN;
     }
 
     public void possibleMoves(Board b, List<Move> moveList) {

@@ -7,8 +7,8 @@ class King extends ChessPiece {
     public King(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
         super(1000, currentSquare, pieceColor);
-        id = PieceID.KING;
-        canCastle = 0;
+        this.id = PieceID.KING;
+        this.canCastle = 0;
     }
 
     public void possibleMoves(Board b, List<Move> moveList) {

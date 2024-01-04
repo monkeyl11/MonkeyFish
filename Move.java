@@ -78,6 +78,22 @@ class Move {
         else if (isQueensideCastle) {
             return "O-O-O";
         }
+        String targetPiece = "";
+        if (this.targetPiece.id == PieceID.KNIGHT) {
+            targetPiece = "N";
+        }
+        else if (this.targetPiece.id == PieceID.BISHOP) {
+            targetPiece = "B";
+        }
+        else if (this.targetPiece.id == PieceID.ROOK) {
+            targetPiece = "R";
+        }
+        else if (this.targetPiece.id == PieceID.QUEEN) {
+            targetPiece = "Q";
+        }
+        else if (this.targetPiece.id == PieceID.KING) {
+            targetPiece = "K";
+        }
         String promotionAddOn = "";
         if (promotionPiece == PieceID.KNIGHT) {
             promotionAddOn = " = N";
@@ -92,8 +108,10 @@ class Move {
             promotionAddOn = " = Q";
         }
         if (capturedPiece != null) {
-            return BoardMethods.squareToString(startSquare) + " x " + BoardMethods.squareToString(endSquare) + promotionAddOn;
+            return targetPiece + BoardMethods.squareToString(startSquare) + " x " + 
+                    BoardMethods.squareToString(endSquare) + promotionAddOn;
         }
-        return BoardMethods.squareToString(startSquare) + " - " + BoardMethods.squareToString(endSquare) + promotionAddOn;
+        return targetPiece + BoardMethods.squareToString(startSquare) + 
+                " - " + BoardMethods.squareToString(endSquare) + promotionAddOn;
     }
 }

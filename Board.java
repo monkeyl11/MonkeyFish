@@ -1,6 +1,7 @@
 class Board {
     private static final byte bitmaskRank = 0b00000111;
     private static final byte bitmaskFile = 0b00111000;
+    private static final int BOARD_LENGTH = 8;
 
     public ChessPiece[][] board;
 
@@ -94,6 +95,37 @@ class Board {
         p.movePiece(end, false);
     }
 
+    public void placePiece(PieceID piece, byte square, Color c) {
+        ChessPiece p = null;
+        if (getPieceFromSquare(square) != null) {
+            System.out.println("Warning: replacing piece already on "  + 
+            BoardMethods.squareToString(square) + " with " + piece);
+        }
+        if (piece == PieceID.PAWN) {
+            p = new Pawn(square, c);
+        }
+        else if (piece == PieceID.KNIGHT) {
+            p = new Knight(square, c);
+        }
+        else if (piece == PieceID.BISHOP) {
+            p = new Bishop(square, c);
+        }
+        else if (piece == PieceID.ROOK) {
+            p = new Rook(square, c);
+        }
+        else if (piece == PieceID.QUEEN) {
+            p = new Queen(square, c);
+        }
+        else if (piece == PieceID.KING) {
+            p = new King(square, c);
+        }
+        board[(square & bitmaskFile) << 3][square & bitmaskRank] = p;
+    }
+
+    public void removePiece(byte square) {
+        board[(square & bitmaskFile) << 3][square & bitmaskRank] = null;
+    }
+
 
     //be careful, undoing any move that isnt the last move may throw exceptions
     public void undoMove(Move m) {
@@ -104,6 +136,8 @@ class Board {
         return board[(square & bitmaskFile) >> 3][square & bitmaskRank];
     }
 
+    //Only accounts for basic piece properties (location, color, type)
+    //Does not account for special piece properties belonging to pawn, rook, king
     @Override
     public boolean equals(Object o) {
         if (o == this) {

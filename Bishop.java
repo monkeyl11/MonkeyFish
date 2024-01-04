@@ -6,7 +6,7 @@ class Bishop extends ChessPiece {
     public Bishop(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
         super(3, currentSquare, pieceColor);
-        id = PieceID.BISHOP;
+        this.id = PieceID.BISHOP;
     }
 
     public void possibleMoves(Board b, List<Move> moveList) {
