@@ -18,7 +18,7 @@ abstract class ChessPiece {
 
     //undoMove parameter here for consistency's sake for movePiece method calls between different pieces
     //Rook, King, and Pawn all require this parameter
-    public void movePiece(byte newSquare, boolean undoMove) {
+    public void movePiece(byte newSquare) {
         this.currentSquare = newSquare;
     }
 

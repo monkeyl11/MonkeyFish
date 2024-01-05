@@ -2,13 +2,11 @@ import java.util.*;
 
 
 class King extends ChessPiece {
-    private int canCastle; //0 for true, >0 for false
 
     public King(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
         super(1000, currentSquare, pieceColor);
         this.id = PieceID.KING;
-        this.canCastle = 0;
     }
 
     public void possibleMoves(Board b, List<Move> moveList) {
@@ -27,16 +25,10 @@ class King extends ChessPiece {
                 }
             }
         }
-        canCastle++;
     }
 
-    public void movePiece(byte newSquare, boolean undoMove) {
-        super.movePiece(newSquare, false);
-        canCastle += undoMove ? -1 : 1;
-    }
-
-    public boolean validCastling() {
-        return canCastle == 0;
+    public void movePiece(byte newSquare) {
+        super.movePiece(newSquare);
     }
 
 

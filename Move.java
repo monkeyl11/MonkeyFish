@@ -9,27 +9,27 @@ class Move {
     public boolean isKingsideCastle = false;
     public boolean isQueensideCastle = false;
     public PieceID promotionPiece = PieceID.NONE;
-    public ChessPiece targetPiece = null;
+    public ChessPiece currentPiece = null;
     public ChessPiece capturedPiece = null;
     public byte startSquare;
     public byte endSquare;
     
     //Non-castling
-    public Move(ChessPiece targetPiece, ChessPiece capturedPiece, 
+    public Move(ChessPiece currentPiece, ChessPiece capturedPiece, 
                 byte endSquare, Color color, 
                 PieceID promotionPiece) {
         this.color = color;
-        this.startSquare = targetPiece.currentSquare;
-        this.targetPiece = targetPiece;
+        this.startSquare = currentPiece.currentSquare;
+        this.currentPiece = currentPiece;
         this.endSquare = endSquare;
         //Check if castling
         this.promotionPiece = promotionPiece;
         this.capturedPiece = capturedPiece;
     }
 
-    public Move(ChessPiece targetPiece, ChessPiece capturedPiece, 
+    public Move(ChessPiece currentPiece, ChessPiece capturedPiece, 
                 byte endSquare, Color color) {
-        this(targetPiece, capturedPiece, endSquare, color, PieceID.NONE);
+        this(currentPiece, capturedPiece, endSquare, color, PieceID.NONE);
     }
 
     //Castling
@@ -55,7 +55,7 @@ class Move {
                 return true;
             else {
                 return m.promotionPiece == this.promotionPiece
-                        && m.targetPiece == this.targetPiece
+                        && m.currentPiece == this.currentPiece
                         && m.capturedPiece == this.capturedPiece
                         && m.startSquare == this.startSquare && m.endSquare == this.endSquare;
             }
@@ -68,7 +68,7 @@ class Move {
     @Override
     public int hashCode() {
         //random function
-        return (color == Color.WHITE ? 1 : -1) * (endSquare * 100 + startSquare) * targetPiece.id.ordinal();
+        return (color == Color.WHITE ? 1 : -1) * (endSquare * 100 + startSquare) * currentPiece.id.ordinal();
     }
 
     public String toString() {
@@ -78,21 +78,21 @@ class Move {
         else if (isQueensideCastle) {
             return "O-O-O";
         }
-        String targetPiece = "";
-        if (this.targetPiece.id == PieceID.KNIGHT) {
-            targetPiece = "N";
+        String currentPiece = "";
+        if (this.currentPiece.id == PieceID.KNIGHT) {
+            currentPiece = "N";
         }
-        else if (this.targetPiece.id == PieceID.BISHOP) {
-            targetPiece = "B";
+        else if (this.currentPiece.id == PieceID.BISHOP) {
+            currentPiece = "B";
         }
-        else if (this.targetPiece.id == PieceID.ROOK) {
-            targetPiece = "R";
+        else if (this.currentPiece.id == PieceID.ROOK) {
+            currentPiece = "R";
         }
-        else if (this.targetPiece.id == PieceID.QUEEN) {
-            targetPiece = "Q";
+        else if (this.currentPiece.id == PieceID.QUEEN) {
+            currentPiece = "Q";
         }
-        else if (this.targetPiece.id == PieceID.KING) {
-            targetPiece = "K";
+        else if (this.currentPiece.id == PieceID.KING) {
+            currentPiece = "K";
         }
         String promotionAddOn = "";
         if (promotionPiece == PieceID.KNIGHT) {
@@ -108,10 +108,10 @@ class Move {
             promotionAddOn = " = Q";
         }
         if (capturedPiece != null) {
-            return targetPiece + BoardMethods.squareToString(startSquare) + " x " + 
+            return currentPiece + BoardMethods.squareToString(startSquare) + " x " + 
                     BoardMethods.squareToString(endSquare) + promotionAddOn;
         }
-        return targetPiece + BoardMethods.squareToString(startSquare) + 
+        return currentPiece + BoardMethods.squareToString(startSquare) + 
                 " - " + BoardMethods.squareToString(endSquare) + promotionAddOn;
     }
 }

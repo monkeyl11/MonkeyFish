@@ -10,6 +10,14 @@ class BoardMethods {
         return letters[(square & bitmaskFile) >> 3] + ((int)(square & bitmaskRank) + 1);
     }
 
+    public static byte stringToSquare(String s) {
+        if (s.length() != 2) {
+            throw new IllegalArgumentException("Invalid string length");
+        }
+        int file = Arrays.asList(letters).indexOf(s.substring(0, 1));
+        return (byte)((file << 3) + Integer.parseInt(s.substring(1, 2)) - 1);
+    }
+
     public static int getFile(byte square) {
         return (int)(square & bitmaskFile) >> 3;
     }

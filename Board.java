@@ -18,6 +18,7 @@ class Board {
         board[5][0] = new Bishop((byte)40, Color.WHITE);
         board[6][0] = new Knight((byte)48, Color.WHITE);
         board[7][0] = new Rook((byte)56, Color.WHITE);
+        ((Rook)board[7][0]).assignKingsideRook();
 
         board[0][7] = new Rook((byte)7, Color.BLACK);
         board[1][7] = new Knight((byte)15, Color.BLACK);
@@ -27,6 +28,8 @@ class Board {
         board[5][7] = new Bishop((byte)47, Color.BLACK);
         board[6][7] = new Knight((byte)55, Color.BLACK);
         board[7][7] = new Rook((byte)63, Color.BLACK);
+        ((Rook)board[7][7]).assignKingsideRook();
+
 
         for (int i = 0; i < 8; i++) {
             board[i][1] = new Pawn((byte)(1 + 8 * i), Color.WHITE);
@@ -40,23 +43,23 @@ class Board {
     public void makeMove(Move m) {
         if (m.isKingsideCastle) {
             if (m.color == Color.WHITE) {
-                movePiece((byte)00100000, (byte)00110000);
-                movePiece((byte)00111000, (byte)00101000);                
+                movePiece((byte)0b00100000, (byte)0b00110000);
+                movePiece((byte)0b00111000, (byte)0b00101000);
             }
             else {
-                movePiece((byte)00100111, (byte)00110111);
-                movePiece((byte)00111111, (byte)00101111);
+                movePiece((byte)0b00100111, (byte)0b00110111);
+                movePiece((byte)0b00111111, (byte)0b00101111);
             }
             return;
         }
         else if (m.isQueensideCastle) {
             if (m.color == Color.WHITE) {
-                movePiece((byte)00100000, (byte)00010000);
-                movePiece((byte)00000000, (byte)00011000);
+                movePiece((byte)0b00100000, (byte)0b00010000);
+                movePiece((byte)0b00000000, (byte)0b00011000);
             }
             else {
-                movePiece((byte)00100111, (byte)00010111);
-                movePiece((byte)00000111, (byte)00011111);
+                movePiece((byte)0b00100111, (byte)0b00010111);
+                movePiece((byte)0b00000111, (byte)0b00011111);
             }
             return;
         }
@@ -88,11 +91,12 @@ class Board {
         ChessPiece p = board[(start & bitmaskFile) >> 3][start & bitmaskRank];
         if (p == null) {
             System.out.println("error moving piece, no piece on square stupid");
+            System.out.println(BoardMethods.squareToString(start));
             return;
         }
         board[(end & bitmaskFile) >> 3][end & bitmaskRank] = p;
         board[(start & bitmaskFile) >> 3][start & bitmaskRank] = null;
-        p.movePiece(end, false);
+        p.movePiece(end);
     }
 
     public void placePiece(PieceID piece, byte square, Color c) {
@@ -119,7 +123,7 @@ class Board {
         else if (piece == PieceID.KING) {
             p = new King(square, c);
         }
-        board[(square & bitmaskFile) << 3][square & bitmaskRank] = p;
+        board[(square & bitmaskFile) >> 3][square & bitmaskRank] = p;
     }
 
     public void removePiece(byte square) {

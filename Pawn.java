@@ -115,8 +115,8 @@ class Pawn extends ChessPiece {
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.QUEEN));
     }
 
-    public void movePiece(byte newSquare, boolean undoMove) {
-        super.movePiece(newSquare, false);
+    public void movePiece(byte newSquare) {
+        super.movePiece(newSquare);
         int rankDiff = BoardMethods.getRank(newSquare) - BoardMethods.getRank(this.currentSquare);
         if (rankDiff == INITIAL_PAWN_STEP) {
             enPassant = this.pieceColor == Color.WHITE ? true : false;
@@ -124,6 +124,10 @@ class Pawn extends ChessPiece {
         else if (rankDiff == -INITIAL_PAWN_STEP) {
             enPassant = this.pieceColor == Color.BLACK ? true : false;
         }
+    }
+
+    public void setEnPassant(boolean b) {
+        this.enPassant = b;
     }
 
     public boolean canEnPassant() {
