@@ -37,7 +37,7 @@ class PGNParser {
                 return null;
             }
             line = scan.nextLine();
-            if (line.contains("1."))
+            if (line.contains("1.") && line.charAt(0) != '[')
                 break;
         }
         while(line != null && line != "") {

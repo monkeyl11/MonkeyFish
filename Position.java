@@ -241,8 +241,8 @@ class Position {
             moveList.add(new Move(side, true, false));
         }
         //queenside castle
-        if (qRook != null && king.id == PieceID.KING && kRook.id == PieceID.ROOK
-            && king.pieceColor == side && kRook.pieceColor == side
+        if (qRook != null && king.id == PieceID.KING && qRook.id == PieceID.ROOK
+            && king.pieceColor == side && qRook.pieceColor == side
             && b.getPieceFromSquare((byte)(king.currentSquare + PREV_FILE)) == null
             && castlingRights[crIndex][1] == 0
             && b.getPieceFromSquare((byte)(king.currentSquare + PREV_FILE * 2)) == null
@@ -319,8 +319,9 @@ class Position {
     }
 
     private Move algebraicNotationToMove(String s) {
-        //TO DO: Fix confusion between bishop/pawn bug, "bc4" should return an error
         List<Move> legalMoves = legalMoves();
+        s = s.replace("#", ""); //checkmate
+        s = s.replace("+", ""); //checks
         //castling
         if (s.toLowerCase().equals("o-o")) {
             for (Move m: legalMoves) {
@@ -343,8 +344,6 @@ class Position {
         //non-castling
         //strip out all unnecessary characters
         PieceID promotionPiece = PieceID.NONE;
-        s = s.replace("#", ""); //checkmate
-        s = s.replace("+", ""); //checks
         if (s.contains("=")) { //promotions
             if (s.indexOf("=") == s.length() - 2) {
                 promotionPiece = identifyPiece(Character.toUpperCase(s.charAt(s.length() - 1)));
@@ -391,6 +390,10 @@ class Position {
         //filter by piece, promotion, end square
         ArrayList<Move> possibleMoves = new ArrayList<>();
         for (Move m: legalMoves) {
+            //dont add castling to possibleMove list, as it is already checked above
+            if (m.currentPiece == null) {
+                continue;
+            }
             if (m.endSquare == endSquare && m.currentPiece.id == currentPiece 
                 && m.promotionPiece == promotionPiece
                 && (pawnFile == -1 || pawnFile == BoardMethods.getFile(m.currentPiece.currentSquare))) {

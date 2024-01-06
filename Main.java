@@ -32,12 +32,21 @@ class Main {
     public static void playOutGame(List<String> game) {
         Position p = new Position(true);
         for (String move: game) {
-            if (!p.makeMove(move)) {
+            try {
+                if (!p.makeMove(move)) {
                 System.out.println("GAME: " + game);
                 System.out.println(move + " FAILED\n" + p);
                 System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
                 break;
                 //throw new IllegalArgumentException("whatever");
+                }
+            }
+            catch (Exception e) {
+                System.out.println("EXCEPTION!!!");
+                System.out.println("GAME: " + game);
+                System.out.println(move + " FAILED\n" + p);
+                System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
+                throw e;
             }
         }
     }
