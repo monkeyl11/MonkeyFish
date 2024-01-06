@@ -54,10 +54,17 @@ class Move {
             else if (m.isQueensideCastle == true && this.isQueensideCastle == true)
                 return true;
             else {
-                return m.promotionPiece == this.promotionPiece
-                        && m.currentPiece == this.currentPiece
-                        && m.capturedPiece == this.capturedPiece
-                        && m.startSquare == this.startSquare && m.endSquare == this.endSquare;
+                if (m.promotionPiece == this.promotionPiece
+                    && m.currentPiece.equals(this.currentPiece)
+                    && m.startSquare == this.startSquare && m.endSquare == this.endSquare) {
+                    if (m.capturedPiece == null) {
+                        return this.capturedPiece == null;
+                    }
+                    else {
+                        return m.capturedPiece.equals(this.capturedPiece);
+                    }
+                }
+            return false;
             }
         }
         else {

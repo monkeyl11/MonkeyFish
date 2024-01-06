@@ -58,6 +58,12 @@ abstract class ChessPiece {
         return c.id == this.id && c.pieceColor == this.pieceColor && c.currentSquare == this.currentSquare;
     }
 
+    @Override
+    public int hashCode() {
+        //random function
+        return id.ordinal() * 10 + pieceColor.ordinal();
+    }
+
     //Mostly for debugging
     public String toString() {
         return pieceColor + " " + id + "-" + BoardMethods.squareToString(currentSquare);

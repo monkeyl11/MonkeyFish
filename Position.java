@@ -55,6 +55,12 @@ class Position {
         this(new Board(), Color.WHITE, setUpBoard, 1, new int[][]{{0, 0}, {0, 0}});
     }
 
+    //for duplicating a position object
+    public Position(Position p) {
+        //To be implemented if necessary
+        throw new IllegalArgumentException("Constructor not implemented, do not use");
+    }
+
     public Position(String fen) {
         String[] fields = fen.split(" ");
         
@@ -278,17 +284,12 @@ class Position {
         }
         //Remove captured pieces
         if (m.capturedPiece != null) {
+            halfMoveHistory.add(halfmoveClock);
             halfmoveClock = 0;
             resetHMClock = true;
-            if (activeColor == Color.WHITE) {
-                if (!blackPieces.remove(m.capturedPiece)) {
-                    System.out.println("Error in piece removal");
-                }
-            }
-            else {
-                if (!whitePieces.remove(m.capturedPiece)) {
-                    System.out.println("Error in piece removal");
-                }
+            HashSet<ChessPiece> s = this.activeColor == Color.WHITE ? blackPieces : whitePieces;
+            if (!s.remove(m.capturedPiece)) {
+                System.out.println("Error in piece removal");                
             }
         }
         int crIndex = activeColor == Color.WHITE ? 0 : 1;
@@ -298,6 +299,7 @@ class Position {
         else {
             if (m.currentPiece.id == PieceID.PAWN) {
                 //update halfmove clock for 50-move rule
+                halfMoveHistory.add(halfmoveClock);
                 halfmoveClock = 0;
                 resetHMClock = true;
                 //pawn promotion
@@ -349,22 +351,61 @@ class Position {
     }
 
     public void undoMove() {
+        activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
+        turn--;
         if (prevMoves.isEmpty()) {
             System.out.println("Undo move FAIL: no previous move");
         }
         Move m = prevMoves.pop();
         b.undoMove(m);
+        //take care of en passant
         if (!enPassantHistory.isEmpty()) {
             //Dont need to check for pawns to set en passant back to false
             //That is taken care of in Pawn.java (due to bad program structuring oops)
             Pawn p = enPassantHistory.peek();
-            if (p.enPassantTurn == this.turn - 2) {
+            if (p.enPassantTurn == this.turn) {
+                enPassantHistory.pop();
+                p = enPassantHistory.peek();
+            }
+            if (p.enPassantTurn == this.turn - 1) {
                 p.setEnPassant(true);
             }
         }
-
-        turn--;
-        activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
+        //take care of captures
+        HashSet<ChessPiece> s = this.activeColor == Color.WHITE ? blackPieces : whitePieces;
+        s.add(m.capturedPiece);
+        //take care of move-specific possible rules
+        int crIndex = this.activeColor == Color.WHITE ? 0 : 1;
+        if (m.isKingsideCastle || m.isQueensideCastle) {
+            castlingRights[crIndex][0]--; castlingRights[crIndex][1]--;
+        }
+        else {
+            if (m.currentPiece.id == PieceID.PAWN) {
+                //pawn promotion
+                if (m.promotionPiece != PieceID.NONE) {
+                    s = this.activeColor == Color.WHITE ? whitePieces : blackPieces;                    
+                    s.remove(b.getPieceFromSquare(m.endSquare));
+                    placePiece(PieceID.PAWN, m.startSquare, m.color);
+                }
+            }
+            else if (m.currentPiece.id == PieceID.KING) {
+                //update castling rights
+                castlingRights[crIndex][0]--; castlingRights[crIndex][1]--;
+            }
+            else if (m.currentPiece.id == PieceID.ROOK) {
+                //update castling rights
+                if (((Rook)m.currentPiece).kingsideRook) {
+                    castlingRights[crIndex][0]--;
+                }
+                else {
+                    castlingRights[crIndex][1]--;
+                }
+            }
+        }
+        //update halfmove clock
+        if (halfmoveClock == 0) {
+            halfmoveClock = halfMoveHistory.pop();
+        }
     }
 
     private Move algebraicNotationToMove(String s) {
@@ -559,13 +600,15 @@ class Position {
     public boolean exactlyEquals(Position p) {
         if (p == this)
             return true;
+        //System.out.println(this.whitePieces);
+
         return p.b.equals(this.b) && p.activeColor == this.activeColor 
                 && p.whitePieces.equals(this.whitePieces)
                 && p.blackPieces.equals(this.blackPieces)
                 && Arrays.equals(this.castlingRights[0], p.castlingRights[0])
                 && Arrays.equals(this.castlingRights[1], p.castlingRights[1])
                 && p.enPassantHistory.equals(this.enPassantHistory)
-                && p.halfMoveHistory.equals(this.enPassantHistory)
+                && p.halfMoveHistory.equals(this.halfMoveHistory)
                 && p.prevMoves.equals(this.prevMoves)
                 && p.turn == this.turn
                 && p.halfmoveClock == this.halfmoveClock;

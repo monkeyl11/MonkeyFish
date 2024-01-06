@@ -2,21 +2,8 @@ import java.util.*;
 
 class Main {
     public static void main(String[] args) {
-        Position p = new Position(true);
-        PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
-        List<String> game;
-        int testcase = 0;
-        while(true) {
-            testcase++;
-            System.out.println("TESTCASE " + testcase);
-            game = parser.nextGame();
-            if (game == null) {
-                break;
-            }
-            //System.out.println(game);
-            playOutGame(game);
-
-        }
+        //testBasic();
+        testUndo(1);
         // Scanner s = new Scanner(System.in);
         // while (true) {
         //     System.out.println(p);
@@ -30,16 +17,24 @@ class Main {
         // }
     }
 
-    public static void playOutGame(List<String> game) {
-        Position p = new Position(true);
+    //plays out a game from start, returns number of moves
+    public static int playOutGame(Position p, List<String> game, int numMoves, boolean debug) {
+        numMoves = numMoves < 0 ? Integer.MAX_VALUE : numMoves;
+        int i = 0;
         for (String move: game) {
+            if (i >= numMoves) {
+                return numMoves;
+            }
             try {
                 if (!p.makeMove(move)) {
-                System.out.println("GAME: " + game);
-                System.out.println(move + " FAILED\n" + p);
-                System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
-                break;
-                //throw new IllegalArgumentException("whatever");
+                    if (debug) {
+                        System.out.println("GAME: " + game);
+                        System.out.println(move + " FAILED\n" + p);
+                        System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
+                        //throw new IllegalArgumentException("whatever");
+                    }
+                    break;
+
                 }
             }
             catch (Exception e) {
@@ -49,6 +44,61 @@ class Main {
                 System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
                 throw e;
             }
+            i++;
+        }
+        return i;
+    }
+
+    //test to make sure no errors occur when playing a game
+    public static void testBasic() {
+        Position p;
+        PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
+        List<String> game;
+        int testcase = 0;
+        while(true) {
+            p = new Position(true);
+            testcase++;
+            System.out.println("TESTCASE " + testcase);
+            game = parser.nextGame();
+            if (game == null) {
+                break;
+            }
+            //System.out.println(game);
+            playOutGame(p, game, -1, true);
+        }
+    }
+
+    public static void testUndo(int numTests) {
+        Position p = null;
+        Position pComp = null;
+        PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
+        List<String> game;
+        int testcase = 0;
+        int i = 0;
+        numTests = numTests < 0 ? Integer.MAX_VALUE : numTests;
+        while(true && i < numTests) {
+            p = new Position(true);
+            pComp = new Position(true);
+            testcase++;
+            System.out.println("UNDO TESTCASE " + testcase);
+            game = parser.nextGame();
+            if (game == null) {
+                break;
+            }
+            //System.out.println(game);
+
+            int moves = playOutGame(p, game, -1, false);
+            //System.out.println(p.b);
+            //System.out.println(pComp.b);
+            for (int j = 1; j <= moves; j++) {
+                p.undoMove();
+                pComp = new Position(true);
+                playOutGame(pComp, game, moves - j, false);
+                if (!p.exactlyEquals(pComp)) {
+                    System.out.println("FAILED");
+                }
+            }
+            i++;
         }
     }
 }
