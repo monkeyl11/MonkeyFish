@@ -67,24 +67,6 @@ class Board {
             board[(m.capturedPiece.currentSquare & bitmaskFile) >> 3][m.capturedPiece.currentSquare & bitmaskRank] = null;
         }
         movePiece(m.startSquare, m.endSquare);
-        if (m.promotionPiece != PieceID.NONE) {
-            int[] pSquare = {(m.endSquare & bitmaskFile) >> 3, m.endSquare & bitmaskRank};
-            if (m.promotionPiece == PieceID.KNIGHT) {
-                board[pSquare[0]][pSquare[1]] = new Knight(m.endSquare, m.color);
-            }
-            if (m.promotionPiece == PieceID.BISHOP) {
-                board[pSquare[0]][pSquare[1]] = new Bishop(m.endSquare, m.color);
-
-            }
-            if (m.promotionPiece == PieceID.ROOK) {
-                board[pSquare[0]][pSquare[1]] = new Rook(m.endSquare, m.color);
-
-            }
-            if (m.promotionPiece == PieceID.QUEEN) {
-                board[pSquare[0]][pSquare[1]] = new Queen(m.endSquare, m.color);
-            }
-        }
-        //only use case is en passant really
     }
 
     public void movePiece(byte start, byte end) {
@@ -99,11 +81,12 @@ class Board {
         p.movePiece(end);
     }
 
-    public void placePiece(PieceID piece, byte square, Color c) {
+    public ChessPiece placePiece(PieceID piece, byte square, Color c) {
         ChessPiece p = null;
         if (getPieceFromSquare(square) != null) {
             System.out.println("Warning: replacing piece already on "  + 
             BoardMethods.squareToString(square) + " with " + piece);
+            System.out.println(this);
         }
         if (piece == PieceID.PAWN) {
             p = new Pawn(square, c);
@@ -124,10 +107,11 @@ class Board {
             p = new King(square, c);
         }
         board[(square & bitmaskFile) >> 3][square & bitmaskRank] = p;
+        return p;
     }
 
     public void removePiece(byte square) {
-        board[(square & bitmaskFile) << 3][square & bitmaskRank] = null;
+        board[(square & bitmaskFile) >> 3][square & bitmaskRank] = null;
     }
 
 

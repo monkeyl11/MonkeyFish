@@ -1,5 +1,6 @@
 import java.util.*;
 
+
 class Position {
     private static final byte WHITE_KING_SQUARE = 0b00100000;
     private static final byte WHITE_K_ROOK_SQUARE = 0b00111000;
@@ -25,6 +26,7 @@ class Position {
     private HashSet<ChessPiece> whitePieces;
     private HashSet<ChessPiece> blackPieces;
     int[][] castlingRights; //0 for castling allowed, >0 = no castling, {{WK, WQ},{BK, BQ}}
+    private HashMap<Integer, Pawn> enPassantMoves;
 
 
     //private HashMap<Position, Integer> prevPositions; //tracking three-fold
@@ -230,7 +232,7 @@ class Position {
             return;
         //kingside castle
         int crIndex = side == Color.WHITE ? 0 : 1;
-        System.out.println("Side castling rights: " + Arrays.toString(castlingRights[crIndex]));
+        //System.out.println("Side castling rights: " + Arrays.toString(castlingRights[crIndex]));
         if (kRook != null && king.id == PieceID.KING && kRook.id == PieceID.ROOK
             && king.pieceColor == side && kRook.pieceColor == side
             && castlingRights[crIndex][0] == 0
@@ -251,9 +253,11 @@ class Position {
 
     public void makeMove(Move m) {
         //TO DO: get rid of en passant for the other side
+        boolean resetHMClock = false;
         b.makeMove(m);
         if (m.capturedPiece != null) {
             halfmoveClock = 0;
+            resetHMClock = true;
             if (activeColor == Color.WHITE) {
                 if (!blackPieces.remove(m.capturedPiece)) {
                     System.out.println("Error in piece removal");
@@ -273,6 +277,13 @@ class Position {
             if (m.currentPiece.id == PieceID.PAWN) {
                 //update halfmove clock for 50-move rule
                 halfmoveClock = 0;
+                resetHMClock = true;
+                if (m.promotionPiece != PieceID.NONE) {
+                    HashSet<ChessPiece> s = this.activeColor == Color.WHITE ? whitePieces : blackPieces;
+                    s.remove(m.currentPiece);
+                    b.removePiece(m.endSquare);
+                    placePiece(m.promotionPiece, m.endSquare, m.color);
+                }
             }
             else if (m.currentPiece.id == PieceID.KING) {
                 //update castling rights
@@ -287,6 +298,9 @@ class Position {
                     castlingRights[crIndex][1]++;
                 }
             }
+        }
+        if (!resetHMClock) {
+            halfmoveClock++;
         }
         turn++;
         activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
@@ -331,13 +345,17 @@ class Position {
         PieceID promotionPiece = PieceID.NONE;
         s = s.replace("#", ""); //checkmate
         s = s.replace("+", ""); //checks
-        s = s.replace("x", ""); //captures
         if (s.contains("=")) { //promotions
             if (s.indexOf("=") == s.length() - 2) {
-                promotionPiece = identifyPiece(s.charAt(s.length() - 1));
+                promotionPiece = identifyPiece(Character.toUpperCase(s.charAt(s.length() - 1)));
+                if (promotionPiece == PieceID.NONE) {
+                    System.out.println("Invalid promotion piece");
+                    return null;
+                }
                 s = s.substring(0, s.length() - 2);
             }
             else {
+                System.out.println("Invalid promotion notation");
                 return null;
             }
         }
@@ -349,18 +367,33 @@ class Position {
             System.out.println("Invalid move square");
             return null;
         }
-        PieceID currentPiece = identifyPiece(s.charAt(0));
-        if (currentPiece == PieceID.NONE) {
+        s = s.substring(0, s.length() - 2);
+        PieceID currentPiece;
+        int pawnFile = -1;
+        if (s.length() == 0) {
             currentPiece = PieceID.PAWN;
         }
         else {
-            s = s.substring(1, s.length());
+            currentPiece = identifyPiece(s.charAt(0));
+            if (currentPiece == PieceID.NONE && s.contains("x")) {
+                currentPiece = PieceID.PAWN;
+                pawnFile = s.charAt(0) - ASCII_FILE_CONVERSION_DIFF;
+                if (pawnFile < 0 || pawnFile >= b.board.length) {
+                    System.out.println("Invalid move: no such file for pawn");
+                    return null;
+                }
+            }
+            else {
+                s = s.substring(1, s.length());
+            }
         }
+        s = s.replace("x", ""); //captures
         //filter by piece, promotion, end square
         ArrayList<Move> possibleMoves = new ArrayList<>();
         for (Move m: legalMoves) {
             if (m.endSquare == endSquare && m.currentPiece.id == currentPiece 
-                && m.promotionPiece == promotionPiece) {
+                && m.promotionPiece == promotionPiece
+                && (pawnFile == -1 || pawnFile == BoardMethods.getFile(m.currentPiece.currentSquare))) {
                 possibleMoves.add(m);
                 }
         }
@@ -374,7 +407,7 @@ class Position {
         //Disambiguating Moves
         else {
             //assume file disambiguation first (standard practice)
-            if (s.length() == 3) {
+            if (s.length() == 1) {
                 int check = s.charAt(0);
                 ArrayList<Move> possibleMovesTwo = new ArrayList<>();
                 if (check - ASCII_FILE_CONVERSION_DIFF >= 0 && check - ASCII_FILE_CONVERSION_DIFF < 8) {
@@ -411,7 +444,7 @@ class Position {
                 }
 
             }
-            else if (s.length() == 4) {
+            else if (s.length() == 2) {
                 byte square = 0;
                 try {
                     square = BoardMethods.stringToSquare(s.substring(0, 2));
@@ -429,7 +462,7 @@ class Position {
                 return null;
             }
             else {
-                if (s.length() == 2) {
+                if (s.length() == 0) {
                     System.out.println("Multiple possible moves given your notation, disambiguation required");
                 }
                 else {
@@ -462,6 +495,11 @@ class Position {
         else {
             return PieceID.NONE;
         }
+    }
+
+    public void placePiece(PieceID piece, byte square, Color c) {
+        HashSet<ChessPiece> s = c == Color.WHITE ? whitePieces : blackPieces;
+        s.add(this.b.placePiece(piece, square, c));
     }
 
     //Should be used only for detecting "same" positions in three-fold repetition

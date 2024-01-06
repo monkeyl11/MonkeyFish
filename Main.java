@@ -3,29 +3,42 @@ import java.util.*;
 class Main {
     public static void main(String[] args) {
         Position p = new Position(true);
-        Scanner s = new Scanner(System.in);
-        while (true) {
-            System.out.println(p);
-            while (true) {
-                System.out.println("Enter move: ");
-                String response = s.nextLine();
-                if (p.makeMove(response)) {
-                    break;
-                }
+        PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
+        List<String> game;
+        int testcase = 0;
+        while(true) {
+            testcase++;
+            System.out.println("TESTCASE " + testcase);
+            game = parser.nextGame();
+            //System.out.println(game);
+            playOutGame(game);
+            if (game == null) {
+                break;
             }
-
         }
+        // Scanner s = new Scanner(System.in);
+        // while (true) {
+        //     System.out.println(p);
+        //     while (true) {
+        //         System.out.println("Enter move: ");
+        //         String response = s.nextLine();
+        //         if (p.makeMove(response)) {
+        //             break;
+        //         }
+        //     }
+        // }
     }
 
-    public static void moves(int index, boolean makeMove, Position p) {
-        List<Move> legalMoves = null;
-        legalMoves = p.legalMoves();
-        if (!makeMove) {
-            System.out.println(legalMoves);
-            System.out.println(legalMoves.size());
-        }
-        if (makeMove) {
-            p.makeMove(legalMoves.get(index));
+    public static void playOutGame(List<String> game) {
+        Position p = new Position(true);
+        for (String move: game) {
+            if (!p.makeMove(move)) {
+                System.out.println("GAME: " + game);
+                System.out.println(move + " FAILED\n" + p);
+                System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
+                break;
+                //throw new IllegalArgumentException("whatever");
+            }
         }
     }
 }
