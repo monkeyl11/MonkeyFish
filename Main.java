@@ -10,11 +10,12 @@ class Main {
             testcase++;
             System.out.println("TESTCASE " + testcase);
             game = parser.nextGame();
-            //System.out.println(game);
-            playOutGame(game);
             if (game == null) {
                 break;
             }
+            //System.out.println(game);
+            playOutGame(game);
+
         }
         // Scanner s = new Scanner(System.in);
         // while (true) {

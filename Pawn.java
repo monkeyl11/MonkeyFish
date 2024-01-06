@@ -11,6 +11,8 @@ class Pawn extends ChessPiece {
     private final static int INITIAL_PAWN_STEP = 2;
     private boolean enPassant = false;
 
+    public int enPassantTurn = -1;
+
     public Pawn(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
         super(1, currentSquare, pieceColor);
@@ -115,9 +117,11 @@ class Pawn extends ChessPiece {
         moveList.add(new Move(this, capturedPiece, endSquare, this.pieceColor, PieceID.QUEEN));
     }
 
+    @Override
     public void movePiece(byte newSquare) {
         super.movePiece(newSquare);
         int rankDiff = BoardMethods.getRank(newSquare) - BoardMethods.getRank(this.currentSquare);
+        //do this to avoid setting en passant flag on undoMove()
         if (rankDiff == INITIAL_PAWN_STEP) {
             enPassant = this.pieceColor == Color.WHITE ? true : false;
         }
@@ -132,5 +136,18 @@ class Pawn extends ChessPiece {
 
     public boolean canEnPassant() {
         return enPassant;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Pawn)) {
+            return false;
+        }
+        Pawn p = (Pawn)o;
+        return p.id == this.id && p.pieceColor == this.pieceColor && p.currentSquare == this.currentSquare
+                && p.enPassant == this.enPassant;
     }
 }

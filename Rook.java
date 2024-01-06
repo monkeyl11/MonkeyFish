@@ -22,8 +22,4 @@ class Rook extends ChessPiece {
         kingsideRook = true;
     }
 
-    public void movePiece(byte newSquare) {
-        super.movePiece(newSquare);
-    }
-
 }

@@ -26,7 +26,10 @@ class Position {
     private HashSet<ChessPiece> whitePieces;
     private HashSet<ChessPiece> blackPieces;
     int[][] castlingRights; //0 for castling allowed, >0 = no castling, {{WK, WQ},{BK, BQ}}
-    private HashMap<Integer, Pawn> enPassantMoves;
+    private Stack<Pawn> enPassantHistory; //for undoing moves
+    private Stack<Integer> halfMoveHistory; //keeping track of halfmove counts
+
+    private Stack<Move> prevMoves;
 
 
     //private HashMap<Position, Integer> prevPositions; //tracking three-fold
@@ -42,6 +45,9 @@ class Position {
         this.activeColor = activeColor;
         this.turn = turn;
         this.castlingRights = castlingRights;
+        this.prevMoves = new Stack<>();
+        this.enPassantHistory = new Stack<>();
+        this.halfMoveHistory = new Stack<>();
         setUpPieceSets();
     }
     
@@ -132,6 +138,8 @@ class Position {
         }
 
         //Field 4: En Passant Targets
+        enPassantHistory = new Stack<>();
+        Pawn enPassantPawn = null;
         if (!(fields[3].charAt(0) == '-')) {
             byte square = BoardMethods.stringToSquare(fields[3]);
             if (BoardMethods.getRank(square) == EN_PASSANT_TARGET_RANK_B) {
@@ -139,6 +147,7 @@ class Position {
                 ChessPiece p = b.getPieceFromSquare((byte)(square - 1));
                 if (p!= null && (p instanceof Pawn) && p.pieceColor == Color.BLACK) {
                     ((Pawn)p).setEnPassant(true);
+                    enPassantPawn = (Pawn)p;
                 }
                 else {
                     throw new IllegalArgumentException("FEN Error: En Passant Targets, Invalid E/P piece");
@@ -161,6 +170,7 @@ class Position {
         
 
         //Field 5: Halfmove Clock, Full move number
+        this.halfMoveHistory = new Stack<>();
         try {
             halfmoveClock = Integer.parseInt(fields[4]);
         }
@@ -171,6 +181,9 @@ class Position {
         //Field 6:Fullmove number
         try {
             turn = (Integer.parseInt(fields[5]) - 1) * 2 + (activeColor == Color.WHITE ? 1 : 0);
+            if (enPassantPawn != null) {
+                enPassantHistory.add(enPassantPawn);
+            }
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("FEN Error: Invalid Fullmove Number");
@@ -202,6 +215,7 @@ class Position {
             p.possibleMoves(this.b, allMoves);
         }
         addCastlingMoves(side, allMoves);
+        //EXTREMELY inefficient, DO NOT use with engine, this is only for the player
         if (!ignoreChecks) {
             //do later, remove moves that put the King in check, then return a different list/set
             return allMoves;
@@ -255,6 +269,14 @@ class Position {
         //TO DO: get rid of en passant for the other side
         boolean resetHMClock = false;
         b.makeMove(m);
+        //Set opposing pawns' en passant variable to false
+        if (!enPassantHistory.empty()) {
+            Pawn lastPawn = enPassantHistory.peek();
+            if (lastPawn.enPassantTurn == this.turn - 1) {
+                lastPawn.setEnPassant(false);
+            }
+        }
+        //Remove captured pieces
         if (m.capturedPiece != null) {
             halfmoveClock = 0;
             resetHMClock = true;
@@ -278,11 +300,18 @@ class Position {
                 //update halfmove clock for 50-move rule
                 halfmoveClock = 0;
                 resetHMClock = true;
+                //pawn promotion
                 if (m.promotionPiece != PieceID.NONE) {
                     HashSet<ChessPiece> s = this.activeColor == Color.WHITE ? whitePieces : blackPieces;
                     s.remove(m.currentPiece);
                     b.removePiece(m.endSquare);
                     placePiece(m.promotionPiece, m.endSquare, m.color);
+                }
+                //Pawn moves forward two squares, en passant-able
+                if (Math.abs(m.endSquare - m.startSquare) == 2) {
+                    Pawn p = (Pawn)(m.currentPiece);
+                    p.enPassantTurn = this.turn;
+                    enPassantHistory.add(p);
                 }
             }
             else if (m.currentPiece.id == PieceID.KING) {
@@ -302,6 +331,7 @@ class Position {
         if (!resetHMClock) {
             halfmoveClock++;
         }
+        prevMoves.add(m);
         turn++;
         activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
     }
@@ -316,6 +346,25 @@ class Position {
             makeMove(m);
             return true;
         }
+    }
+
+    public void undoMove() {
+        if (prevMoves.isEmpty()) {
+            System.out.println("Undo move FAIL: no previous move");
+        }
+        Move m = prevMoves.pop();
+        b.undoMove(m);
+        if (!enPassantHistory.isEmpty()) {
+            //Dont need to check for pawns to set en passant back to false
+            //That is taken care of in Pawn.java (due to bad program structuring oops)
+            Pawn p = enPassantHistory.peek();
+            if (p.enPassantTurn == this.turn - 2) {
+                p.setEnPassant(true);
+            }
+        }
+
+        turn--;
+        activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
     }
 
     private Move algebraicNotationToMove(String s) {
@@ -503,6 +552,23 @@ class Position {
     public void placePiece(PieceID piece, byte square, Color c) {
         HashSet<ChessPiece> s = c == Color.WHITE ? whitePieces : blackPieces;
         s.add(this.b.placePiece(piece, square, c));
+    }
+
+    //equals() method but takes into account ALL class members, not just those needed by three-fold
+    //mainly used for debugging undoMove()
+    public boolean exactlyEquals(Position p) {
+        if (p == this)
+            return true;
+        return p.b.equals(this.b) && p.activeColor == this.activeColor 
+                && p.whitePieces.equals(this.whitePieces)
+                && p.blackPieces.equals(this.blackPieces)
+                && Arrays.equals(this.castlingRights[0], p.castlingRights[0])
+                && Arrays.equals(this.castlingRights[1], p.castlingRights[1])
+                && p.enPassantHistory.equals(this.enPassantHistory)
+                && p.halfMoveHistory.equals(this.enPassantHistory)
+                && p.prevMoves.equals(this.prevMoves)
+                && p.turn == this.turn
+                && p.halfmoveClock == this.halfmoveClock;
     }
 
     //Should be used only for detecting "same" positions in three-fold repetition

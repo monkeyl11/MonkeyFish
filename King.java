@@ -27,9 +27,4 @@ class King extends ChessPiece {
         }
     }
 
-    public void movePiece(byte newSquare) {
-        super.movePiece(newSquare);
-    }
-
-
 }

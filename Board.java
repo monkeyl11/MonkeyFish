@@ -69,6 +69,36 @@ class Board {
         movePiece(m.startSquare, m.endSquare);
     }
 
+    //be careful, undoing any move that isnt the last move may throw exceptions
+    public void undoMove(Move m) {
+        if (m.isKingsideCastle) {
+            if (m.color == Color.WHITE) {
+                movePiece((byte)0b00110000, (byte)0b00100000);
+                movePiece((byte)0b00101000, (byte)0b00111000);
+            }
+            else {
+                movePiece((byte)0b00110111, (byte)0b00100111);
+                movePiece((byte)0b00101111, (byte)0b00111111);
+            }
+            return;
+        }
+        else if (m.isQueensideCastle) {
+            if (m.color == Color.WHITE) {
+                movePiece((byte)0b00010000, (byte)0b00100000);
+                movePiece((byte)0b00011000, (byte)0b00000000);
+            }
+            else {
+                movePiece((byte)0b00010111, (byte)0b00100111);
+                movePiece((byte)0b00011111, (byte)0b00000111);
+            }
+            return;
+        }
+        if (m.capturedPiece != null) {
+            board[(m.capturedPiece.currentSquare & bitmaskFile) >> 3][m.capturedPiece.currentSquare & bitmaskRank] = m.capturedPiece;
+        }
+        movePiece(m.endSquare, m.startSquare);
+    }
+
     public void movePiece(byte start, byte end) {
         ChessPiece p = board[(start & bitmaskFile) >> 3][start & bitmaskRank];
         if (p == null) {
@@ -112,12 +142,6 @@ class Board {
 
     public void removePiece(byte square) {
         board[(square & bitmaskFile) >> 3][square & bitmaskRank] = null;
-    }
-
-
-    //be careful, undoing any move that isnt the last move may throw exceptions
-    public void undoMove(Move m) {
-
     }
 
     public ChessPiece getPieceFromSquare(byte square) { 
