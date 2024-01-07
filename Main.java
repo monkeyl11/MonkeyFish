@@ -4,11 +4,14 @@ import java.io.FileNotFoundException;
 
 
 class Main {
+    private static Stopwatch stopwatch = new Stopwatch();
+    
     public static void main(String[] args) {
         //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
-        //testAll();
+        testAll();
+        System.out.println(stopwatch);
         //testUndo(-1);
-        testAllUndo();
+        //testAllUndo();
         // Position p = new Position(true);
         // PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
         // List<String> game;
@@ -98,7 +101,9 @@ class Main {
                 break;
             }
             //System.out.println(game);
+            stopwatch.start();
             playOutGame(p, game, -1, debug);
+            stopwatch.stop();
         }
     }
 

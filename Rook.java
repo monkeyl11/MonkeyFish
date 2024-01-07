@@ -11,7 +11,7 @@ class Rook extends ChessPiece {
     }
 
 
-    public void possibleMoves(Board b, List<Move> moveList) {
+    public void possibleMoves(Board b, List<Move> moveList, OppPieceInfo pieceInfo) {
         checkLine(b, moveList, 0, 1);
         checkLine(b, moveList, 0, -1);
         checkLine(b, moveList, 1, 0);

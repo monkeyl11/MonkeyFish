@@ -48,7 +48,7 @@ abstract class ChessPiece {
         }
     }
 
-    abstract void possibleMoves(Board b, List<Move> moveList);
+    abstract void possibleMoves(Board b, List<Move> moveList, OppPieceInfo pieceInfo);
 
     public char toChar() {
         char ret = ' ';

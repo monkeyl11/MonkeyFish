@@ -221,13 +221,12 @@ class Position {
         ArrayList<Move> allMoves = new ArrayList<>();
         HashSet<ChessPiece> playerPieces = side == Color.WHITE ? whitePieces : blackPieces;
         for (ChessPiece p: playerPieces) {
-            p.possibleMoves(this.b, allMoves);
+            p.possibleMoves(this.b, allMoves, null);
         }
         addCastlingMoves(side, allMoves);
-        //EXTREMELY inefficient, DO NOT use with engine, this is only for the player
         if (!ignoreChecks) {
             //do later, remove moves that put the King in check, then return a different list/set
-            return allMoves;
+            return checkRemove(allMoves);
 
         }
         else {
@@ -237,6 +236,19 @@ class Position {
 
     public List<Move> legalMoves() {
         return legalMoves(this.activeColor, false);
+    }
+
+    private List<Move> checkRemove(List<Move> possibleMoves) {
+        ArrayList<Move> moveList = new ArrayList<>();
+        /* NEED to do:
+        1. Remove King moves that go to a square in check
+        2. Remove moves from pieces pinned to the king that put the King in check
+            -YOU CAN EN PASSANT INTO CHECK
+        3. Remove moves that do not move the King out of check (when in check)
+            -Remove the checking piece, block the checking piece, move the King out of check */
+
+
+        return moveList;
     }
 
     public void addCastlingMoves(Color side, List<Move> moveList) {

@@ -9,7 +9,7 @@ class King extends ChessPiece {
         this.id = PieceID.KING;
     }
 
-    public void possibleMoves(Board b, List<Move> moveList) {
+    public void possibleMoves(Board b, List<Move> moveList, OppPieceInfo pieceInfo) {
         //DOES NOT ADD CASTLING, this is done in Position.java, which is also the only place
         //this function will ever be called from
         int pieceRank = this.currentSquare & bitmaskRank;

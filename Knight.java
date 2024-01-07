@@ -11,7 +11,7 @@ class Knight extends ChessPiece {
         this.id = PieceID.KNIGHT;
     }
 
-    public void possibleMoves(Board b, List<Move> moveList) {
+    public void possibleMoves(Board b, List<Move> moveList, OppPieceInfo pieceInfo) {
         int pieceRank = this.currentSquare & bitmaskRank;
         int pieceFile = (this.currentSquare & bitmaskFile) >> 3;
         for (int[] possibleMove: knightMoves) {
