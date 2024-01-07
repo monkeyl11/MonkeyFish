@@ -3,7 +3,14 @@ import java.util.*;
 class Main {
     public static void main(String[] args) {
         //testBasic();
-        testUndo(1);
+        testUndo(-1);
+        // Position p = new Position(true);
+        // PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
+        // List<String> game;
+        // game = parser.nextGame();
+        // playOutGame(p, game, 45, false);
+        // System.out.println(p);
+        // System.out.println(((Pawn)(p.b.getPieceFromSquare("b7"))).canEnPassant());
         // Scanner s = new Scanner(System.in);
         // while (true) {
         //     System.out.println(p);
@@ -77,10 +84,9 @@ class Main {
         int i = 0;
         numTests = numTests < 0 ? Integer.MAX_VALUE : numTests;
         while(true && i < numTests) {
+            ChessPiece.resetIDCounter();
             p = new Position(true);
-            pComp = new Position(true);
             testcase++;
-            System.out.println("UNDO TESTCASE " + testcase);
             game = parser.nextGame();
             if (game == null) {
                 break;
@@ -92,10 +98,13 @@ class Main {
             //System.out.println(pComp.b);
             for (int j = 1; j <= moves; j++) {
                 p.undoMove();
+                ChessPiece.resetIDCounter();
                 pComp = new Position(true);
                 playOutGame(pComp, game, moves - j, false);
                 if (!p.exactlyEquals(pComp)) {
                     System.out.println("FAILED");
+                    System.out.println(moves - j);
+                    throw new IllegalArgumentException();
                 }
             }
             i++;

@@ -6,6 +6,8 @@ abstract class ChessPiece {
     public Color pieceColor;
     protected byte currentSquare;
     protected List<Byte>[] movesForSquare;
+    private static int specialIDCounter;
+    public int specialID;
 
     protected static final byte bitmaskRank = 0b00000111;
     protected static final byte bitmaskFile = 0b00111000;
@@ -14,6 +16,8 @@ abstract class ChessPiece {
         this.pieceMaterialValue = pieceMaterialValue;
         this.currentSquare = currentSquare;
         this.pieceColor = pieceColor;
+        this.specialID = specialIDCounter;
+        specialIDCounter++;
     }
 
     //undoMove parameter here for consistency's sake for movePiece method calls between different pieces
@@ -55,18 +59,23 @@ abstract class ChessPiece {
             return false;
         }
         ChessPiece c = (ChessPiece)o;
-        return c.id == this.id && c.pieceColor == this.pieceColor && c.currentSquare == this.currentSquare;
+        return c.id == this.id && c.pieceColor == this.pieceColor && c.specialID == this.specialID;
     }
 
     @Override
     public int hashCode() {
         //random function
-        return id.ordinal() * 10 + pieceColor.ordinal();
+        return specialID;
     }
 
     //Mostly for debugging
     public String toString() {
         return pieceColor + " " + id + "-" + BoardMethods.squareToString(currentSquare);
+        //return "" + specialID; //Used for debugging sets
+    }
+
+    public static void resetIDCounter() {
+        specialIDCounter = 0;
     }
 
 

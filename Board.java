@@ -93,10 +93,10 @@ class Board {
             }
             return;
         }
+        movePiece(m.endSquare, m.startSquare);
         if (m.capturedPiece != null) {
             board[(m.capturedPiece.currentSquare & bitmaskFile) >> 3][m.capturedPiece.currentSquare & bitmaskRank] = m.capturedPiece;
         }
-        movePiece(m.endSquare, m.startSquare);
     }
 
     public void movePiece(byte start, byte end) {
@@ -140,12 +140,21 @@ class Board {
         return p;
     }
 
+    public void placePiece(ChessPiece p, byte square) {
+        board[(square & bitmaskFile) >> 3][square & bitmaskRank] = p;
+    }
+
     public void removePiece(byte square) {
         board[(square & bitmaskFile) >> 3][square & bitmaskRank] = null;
     }
 
     public ChessPiece getPieceFromSquare(byte square) { 
         return board[(square & bitmaskFile) >> 3][square & bitmaskRank];
+    }
+
+    //Debugging use only
+    public ChessPiece getPieceFromSquare(String square) {
+        return getPieceFromSquare(BoardMethods.stringToSquare(square));
     }
 
     //Only accounts for basic piece properties (location, color, type)
@@ -163,11 +172,19 @@ class Board {
             ChessPiece thisPiece = this.getPieceFromSquare(i);
             ChessPiece otherPiece = b.getPieceFromSquare(i);
             if (thisPiece != null) {
-                if (!thisPiece.equals(otherPiece))
+                if (!thisPiece.equals(otherPiece)) {
+                    System.out.println("CONLIFCT SQUARE: " + BoardMethods.squareToString(i));
+                    System.out.println(thisPiece.specialID);
+                    System.out.println(otherPiece.specialID);
+                    System.out.println(b);
+                    System.out.println(this);
                     return false;
+                }
+
             }
             else {
                 if (otherPiece != null) {
+                    System.out.println(BoardMethods.squareToString(i));
                     return false;
                 }
             }

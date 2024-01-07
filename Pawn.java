@@ -9,7 +9,7 @@ class Pawn extends ChessPiece {
     private final static int LAST_RANK_BLACK = 0;
     private final static int EN_PASSANT_RANK_BLACK = 3;
     private final static int INITIAL_PAWN_STEP = 2;
-    private boolean enPassant = false;
+    private boolean enPassant;
 
     public int enPassantTurn = -1;
 
@@ -17,6 +17,7 @@ class Pawn extends ChessPiece {
         //add pawn to square currentSquare
         super(1, currentSquare, pieceColor);
         this.id = PieceID.PAWN;
+        this.enPassant = false;
     }
 
     //Method not in use as it cannot account for en passant
@@ -34,7 +35,6 @@ class Pawn extends ChessPiece {
                     moveList.add(new Move(this, null, targetSquare, this.pieceColor));
                     if (pieceRank == FIRST_RANK_WHITE && b.board[pieceFile][pieceRank + INITIAL_PAWN_STEP] == null) {
                         moveList.add(new Move(this, null, (byte)(targetSquare + 1), this.pieceColor));
-                        enPassant = true; //next turn the pawn can be taken en passant
                     }
                 }
             }
@@ -77,7 +77,6 @@ class Pawn extends ChessPiece {
                     moveList.add(new Move(this, null, targetSquare, this.pieceColor));
                     if (pieceRank == FIRST_RANK_BLACK && b.board[pieceFile][pieceRank - INITIAL_PAWN_STEP] == null) {
                         moveList.add(new Move(this, null, (byte)(targetSquare - 1), this.pieceColor));
-                        enPassant = true; //next turn the pawn can be taken en passant
                     }
                 }
             }
@@ -119,14 +118,14 @@ class Pawn extends ChessPiece {
 
     @Override
     public void movePiece(byte newSquare) {
-        super.movePiece(newSquare);
         int rankDiff = BoardMethods.getRank(newSquare) - BoardMethods.getRank(this.currentSquare);
+        super.movePiece(newSquare);
         //do this to avoid setting en passant flag on undoMove()
         if (rankDiff == INITIAL_PAWN_STEP) {
-            enPassant = this.pieceColor == Color.WHITE ? true : false;
+            this.enPassant = this.pieceColor == Color.WHITE ? true : false;
         }
         else if (rankDiff == -INITIAL_PAWN_STEP) {
-            enPassant = this.pieceColor == Color.BLACK ? true : false;
+            this.enPassant = this.pieceColor == Color.BLACK ? true : false;
         }
     }
 
@@ -147,7 +146,6 @@ class Pawn extends ChessPiece {
             return false;
         }
         Pawn p = (Pawn)o;
-        return p.id == this.id && p.pieceColor == this.pieceColor && p.currentSquare == this.currentSquare
-                && p.enPassant == this.enPassant;
+        return super.equals(o) && p.enPassant == this.enPassant;
     }
 }

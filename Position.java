@@ -299,8 +299,10 @@ class Position {
         else {
             if (m.currentPiece.id == PieceID.PAWN) {
                 //update halfmove clock for 50-move rule
-                halfMoveHistory.add(halfmoveClock);
-                halfmoveClock = 0;
+                if (!resetHMClock) {
+                    halfMoveHistory.add(halfmoveClock);
+                    halfmoveClock = 0;
+                }
                 resetHMClock = true;
                 //pawn promotion
                 if (m.promotionPiece != PieceID.NONE) {
@@ -355,17 +357,20 @@ class Position {
         turn--;
         if (prevMoves.isEmpty()) {
             System.out.println("Undo move FAIL: no previous move");
+            return;
         }
         Move m = prevMoves.pop();
-        b.undoMove(m);
+        //System.out.println("UNDOING MOVE: " + m);
         //take care of en passant
         if (!enPassantHistory.isEmpty()) {
             //Dont need to check for pawns to set en passant back to false
             //That is taken care of in Pawn.java (due to bad program structuring oops)
             Pawn p = enPassantHistory.peek();
             if (p.enPassantTurn == this.turn) {
-                enPassantHistory.pop();
-                p = enPassantHistory.peek();
+                enPassantHistory.pop().setEnPassant(false);
+                if (!enPassantHistory.isEmpty()) {
+                    p = enPassantHistory.peek();
+                }
             }
             if (p.enPassantTurn == this.turn - 1) {
                 p.setEnPassant(true);
@@ -373,7 +378,8 @@ class Position {
         }
         //take care of captures
         HashSet<ChessPiece> s = this.activeColor == Color.WHITE ? blackPieces : whitePieces;
-        s.add(m.capturedPiece);
+        if (m.capturedPiece != null)
+            s.add(m.capturedPiece);
         //take care of move-specific possible rules
         int crIndex = this.activeColor == Color.WHITE ? 0 : 1;
         if (m.isKingsideCastle || m.isQueensideCastle) {
@@ -383,9 +389,10 @@ class Position {
             if (m.currentPiece.id == PieceID.PAWN) {
                 //pawn promotion
                 if (m.promotionPiece != PieceID.NONE) {
-                    s = this.activeColor == Color.WHITE ? whitePieces : blackPieces;                    
+                    s = this.activeColor == Color.WHITE ? whitePieces : blackPieces;
                     s.remove(b.getPieceFromSquare(m.endSquare));
-                    placePiece(PieceID.PAWN, m.startSquare, m.color);
+                    b.removePiece(m.endSquare);
+                    placePiece(m.currentPiece);
                 }
             }
             else if (m.currentPiece.id == PieceID.KING) {
@@ -402,9 +409,14 @@ class Position {
                 }
             }
         }
+        //undo move on board
+        b.undoMove(m);
         //update halfmove clock
         if (halfmoveClock == 0) {
             halfmoveClock = halfMoveHistory.pop();
+        }
+        else {
+            halfmoveClock--;
         }
     }
 
@@ -595,12 +607,25 @@ class Position {
         s.add(this.b.placePiece(piece, square, c));
     }
 
+    public void placePiece(ChessPiece p) {
+        HashSet<ChessPiece> s = p.pieceColor == Color.WHITE ? whitePieces : blackPieces;
+        s.add(p);
+        b.placePiece(p, p.currentSquare);
+    }
+
     //equals() method but takes into account ALL class members, not just those needed by three-fold
     //mainly used for debugging undoMove()
     public boolean exactlyEquals(Position p) {
         if (p == this)
             return true;
         //System.out.println(this.whitePieces);
+        // try {
+        //     System.out.println("CORRECT: " + ((Pawn)(p.b.getPieceFromSquare("b7"))).canEnPassant());
+        //     System.out.println("AFTER UNDO: " + ((Pawn)(this.b.getPieceFromSquare("b7"))).canEnPassant());
+        // } catch (Exception e) {
+        //     // TODO: handle exception
+        // }
+
 
         return p.b.equals(this.b) && p.activeColor == this.activeColor 
                 && p.whitePieces.equals(this.whitePieces)
