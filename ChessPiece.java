@@ -50,6 +50,32 @@ abstract class ChessPiece {
 
     abstract void possibleMoves(Board b, List<Move> moveList);
 
+    public char toChar() {
+        char ret = ' ';
+        if(this.id == PieceID.PAWN) {
+            ret = 'p';
+        }
+        else if (this.id == PieceID.KNIGHT) {
+            ret = 'n';
+        }
+        else if (this.id == PieceID.BISHOP) {
+            ret = 'b';
+        }
+        else if (this.id == PieceID.ROOK) {
+            ret = 'r';
+        }
+        else if (this.id == PieceID.QUEEN) {
+            ret = 'q';
+        }
+        else if (this.id == PieceID.KING) {
+            ret = 'k';
+        }
+        if (this.pieceColor == Color.WHITE && ret != ' ') {
+            ret = Character.toUpperCase(ret);
+        }
+        return ret;
+    }    
+
     @Override
     public boolean equals(Object o) {
         if (o == this) {

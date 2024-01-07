@@ -22,6 +22,18 @@ class PGNParser {
         }
     }
 
+    public PGNParser(File f) {
+        try {
+            scan = new Scanner(f);
+            validFile = true;
+        }
+        catch (Exception FileNotFoundException) {
+            System.out.println("Invalid file");
+            validFile = false;
+        }
+
+    }
+
     public List<String> nextGame() {
         if (!validFile) {
             System.out.println("File not found/File reader has been closed");
@@ -41,15 +53,16 @@ class PGNParser {
                 break;
         }
         while(line != null && line != "") {
-            if (line.contains("{")) {
-                throw new IllegalArgumentException("PGN file cannot contain comments, this feature is unsupported");
+            if(line.contains("{")) {
+                throw new IllegalArgumentException("Comments are not supported at the moment");
             }
             String[] moves = line.split(" ");
             for (String move: moves) {
                 if (move.contains(".")) {
                     move = move.substring(move.indexOf(".") + 1, move.length());
                 }
-                if (move.length() != 0 && !move.matches("(?s).*[0-2]-[0-2].*")) {
+                if (move.length() != 0 && !move.matches("(?s).*[0-2]-[0-2].*")
+                    && !move.equals("*")) {
                     game.add(move);
                 }
             }

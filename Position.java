@@ -19,6 +19,8 @@ class Position {
     private static final int ASCII_FILE_CONVERSION_DIFF = 97;
     private static final int ASCII_RANK_CONVERSION_DIFF = 49;
 
+    private static final int BOARD_END_INDEX = 7;
+
 
 
     public Board b;
@@ -77,7 +79,7 @@ class Position {
                 if (val > 9) {
                     //A piece must be placed
                     Color color = Character.isUpperCase(s) ? Color.WHITE : Color.BLACK;
-                    s = Character.toLowerCase(s);
+                    s = Character.toUpperCase(s);
                     byte square = (byte)((file << 3) + rank);
                     b.placePiece(identifyPiece(s), square, color);
                     file++;
@@ -186,8 +188,9 @@ class Position {
 
         //Field 6:Fullmove number
         try {
-            turn = (Integer.parseInt(fields[5]) - 1) * 2 + (activeColor == Color.WHITE ? 1 : 0);
+            turn = (Integer.parseInt(fields[5]) - 1) * 2 + 1 + (activeColor == Color.WHITE ? 0 : 1);
             if (enPassantPawn != null) {
+                enPassantPawn.enPassantTurn = turn - 1;
                 enPassantHistory.add(enPassantPawn);
             }
         }
@@ -291,6 +294,15 @@ class Position {
             if (!s.remove(m.capturedPiece)) {
                 System.out.println("Error in piece removal");                
             }
+            if (m.capturedPiece.id == PieceID.ROOK) {
+                int crIndex = m.capturedPiece.pieceColor == Color.WHITE ? 0 : 1;
+                if (((Rook)m.capturedPiece).kingsideRook) {
+                    castlingRights[crIndex][0]++;
+                }
+                else {
+                    castlingRights[crIndex][1]++;
+                }
+            }
         }
         int crIndex = activeColor == Color.WHITE ? 0 : 1;
         if (m.isKingsideCastle || m.isQueensideCastle) {
@@ -343,7 +355,6 @@ class Position {
     public boolean makeMove(String s) {
         Move m = algebraicNotationToMove(s);
         if (m == null) {
-            System.out.println("Error making move, please see above message for cause");
             return false;
         }
         else {
@@ -378,8 +389,18 @@ class Position {
         }
         //take care of captures
         HashSet<ChessPiece> s = this.activeColor == Color.WHITE ? blackPieces : whitePieces;
-        if (m.capturedPiece != null)
+        if (m.capturedPiece != null) {
             s.add(m.capturedPiece);
+            if (m.capturedPiece.id == PieceID.ROOK) {
+                int crIndex = m.capturedPiece.pieceColor == Color.WHITE ? 0 : 1;
+                if (((Rook)m.capturedPiece).kingsideRook) {
+                    castlingRights[crIndex][0]--;
+                }
+                else {
+                    castlingRights[crIndex][1]--;
+                }
+            }
+        }
         //take care of move-specific possible rules
         int crIndex = this.activeColor == Color.WHITE ? 0 : 1;
         if (m.isKingsideCastle || m.isQueensideCastle) {
@@ -568,7 +589,7 @@ class Position {
             }
             else {
                 if (s.length() == 0) {
-                    System.out.println("Multiple possible moves given your notation, disambiguation required");
+                    //System.out.println("Multiple possible moves given your notation, disambiguation required");
                 }
                 else {
                     System.out.println("Unknown notation error");
@@ -613,19 +634,84 @@ class Position {
         b.placePiece(p, p.currentSquare);
     }
 
+    public String toFEN() {
+        StringBuilder fen = new StringBuilder();
+
+        for (int i = BOARD_END_INDEX; i >= 0; i--) {
+            int emptyCount = 0;
+            for (int j = 0; j < 8; j++) {
+                ChessPiece p = b.getPieceFromSquare((byte)((j << 3) + i));
+                if (p == null) {
+                    emptyCount++;
+                    if (j == BOARD_END_INDEX) {
+                        //end of rank
+                        fen.append(emptyCount);
+                    }
+                }
+                else {
+                    if (emptyCount != 0) {
+                        fen.append(emptyCount);
+                        emptyCount = 0;
+                    }
+                    fen.append(p.toChar());
+                }
+            }
+            if (i != 0) {
+                fen.append("/");
+            }
+        }
+        fen.append(" ");
+
+        fen.append(this.activeColor == Color.WHITE ? 'w' : 'b');
+        fen.append(" ");
+
+        StringBuilder cR = new StringBuilder();
+        if (castlingRights[0][0] == 0) 
+            cR.append('K');
+        if (castlingRights[0][1] == 0) 
+            cR.append('Q');
+        if (castlingRights[1][0] == 0) 
+            cR.append('k');
+        if (castlingRights[1][1] == 0) 
+            cR.append('q');
+        if (cR.isEmpty()) 
+            cR.append('-');
+        fen.append(cR);
+        fen.append(" ");
+
+        if (!enPassantHistory.isEmpty()) {
+            Pawn lastEnPassant = enPassantHistory.peek();
+            if (lastEnPassant.enPassantTurn == turn - 1) {
+                if (lastEnPassant.pieceColor == Color.WHITE) {
+                    fen.append(BoardMethods.squareToString((byte)(lastEnPassant.currentSquare - 1)));
+                }
+                else {
+                    fen.append(BoardMethods.squareToString((byte)(lastEnPassant.currentSquare + 1)));
+                }
+            }
+            else {
+                fen.append("-");
+            }
+        }
+        else {
+            fen.append("-");
+        }
+        fen.append(" ");
+        
+
+        fen.append(halfmoveClock);
+        fen.append(" ");
+
+        fen.append((turn - (activeColor == Color.WHITE ? 0 : 1)) / 2 + 1);
+
+        return fen.toString();
+    }
+
     //equals() method but takes into account ALL class members, not just those needed by three-fold
     //mainly used for debugging undoMove()
     public boolean exactlyEquals(Position p) {
         if (p == this)
             return true;
-        //System.out.println(this.whitePieces);
-        // try {
-        //     System.out.println("CORRECT: " + ((Pawn)(p.b.getPieceFromSquare("b7"))).canEnPassant());
-        //     System.out.println("AFTER UNDO: " + ((Pawn)(this.b.getPieceFromSquare("b7"))).canEnPassant());
-        // } catch (Exception e) {
-        //     // TODO: handle exception
-        // }
-
 
         return p.b.equals(this.b) && p.activeColor == this.activeColor 
                 && p.whitePieces.equals(this.whitePieces)
@@ -635,6 +721,19 @@ class Position {
                 && p.enPassantHistory.equals(this.enPassantHistory)
                 && p.halfMoveHistory.equals(this.halfMoveHistory)
                 && p.prevMoves.equals(this.prevMoves)
+                && p.turn == this.turn
+                && p.halfmoveClock == this.halfmoveClock;
+    }
+
+    //Strictly for debugging FEN Generation
+    public boolean FENEquals(Position p) {
+        if (p == this)
+            return true;
+        return p.b.equals(this.b) && p.activeColor == this.activeColor 
+                && ((this.castlingRights[0][0] > 0 && p.castlingRights[0][0] > 0) || (this.castlingRights[0][0] == 0 && p.castlingRights[0][0] == 0))
+                && ((this.castlingRights[1][0] > 0 && p.castlingRights[1][0] > 0) || (this.castlingRights[1][0] == 0 && p.castlingRights[1][0] == 0))
+                && ((this.castlingRights[0][1] > 0 && p.castlingRights[0][1] > 0) || (this.castlingRights[0][1] == 0 && p.castlingRights[0][1] == 0))
+                && ((this.castlingRights[1][1] > 0 && p.castlingRights[1][1] > 0) || (this.castlingRights[1][1] == 0 && p.castlingRights[1][1] == 0))
                 && p.turn == this.turn
                 && p.halfmoveClock == this.halfmoveClock;
     }

@@ -1,9 +1,14 @@
 import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException; 
+
 
 class Main {
     public static void main(String[] args) {
-        //testBasic();
-        testUndo(-1);
+        //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
+        //testAll();
+        //testUndo(-1);
+        testAllUndo();
         // Position p = new Position(true);
         // PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
         // List<String> game;
@@ -38,11 +43,12 @@ class Main {
                         System.out.println("GAME: " + game);
                         System.out.println(move + " FAILED\n" + p);
                         System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
+
                         //throw new IllegalArgumentException("whatever");
                     }
                     break;
-
                 }
+
             }
             catch (Exception e) {
                 System.out.println("EXCEPTION!!!");
@@ -51,34 +57,73 @@ class Main {
                 System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
                 throw e;
             }
+            //Test FEN generation
+            // try {
+            //     ChessPiece.resetIDCounter();
+            //     Position p2 = new Position(p.toFEN());
+            //     if (!p2.FENEquals(p)) {
+            //         System.out.println("FEN Fail");
+            //         System.out.println(p);
+            //         System.out.println(p.toFEN());
+            //         throw new IllegalArgumentException();
+            //     }
+            // }
+            // catch (Exception e) {
+            //     System.out.println("FEN Fail");
+            //     System.out.println(p);
+            //     System.out.println(p.toFEN());
+            //     throw e;
+            // }
             i++;
         }
         return i;
     }
 
-    //test to make sure no errors occur when playing a game
-    public static void testBasic() {
+    //test
+    public static void runPlayerGames(String s, boolean debug, int numGames) {
+        numGames = numGames < 0 ? Integer.MAX_VALUE : numGames;
         Position p;
-        PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
+        PGNParser parser = new PGNParser(s);
         List<String> game;
         int testcase = 0;
-        while(true) {
+        s = s.replace(".\\testcases_games\\", "");
+        s = s.replace(".pgn", "");
+        System.out.println("PLAYING OUT " + s);
+        while(true && testcase < numGames) {
             p = new Position(true);
             testcase++;
-            System.out.println("TESTCASE " + testcase);
+            //System.out.println("TESTCASE " + testcase);
             game = parser.nextGame();
             if (game == null) {
                 break;
             }
             //System.out.println(game);
-            playOutGame(p, game, -1, true);
+            playOutGame(p, game, -1, debug);
         }
     }
 
-    public static void testUndo(int numTests) {
+    //Runs through ~400k games
+    public static void testAll() {
+        File[] files = new File("./testcases_games").listFiles();
+        for (File f: files) {
+            runPlayerGames(f.toString(), false, -1);
+        }
+    }
+
+    public static void testAllUndo() {
+        File[] files = new File("./testcases_games").listFiles();
+        for (File f: files) {
+            testUndo(f.toString(),  -1);
+        }
+    }
+
+    public static void testUndo(String s, int numTests) {
         Position p = null;
         Position pComp = null;
-        PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
+        PGNParser parser = new PGNParser(s);
+        s = s.replace(".\\testcases_games\\", "");
+        s = s.replace(".pgn", "");
+        System.out.println("PLAYING OUT " + s);
         List<String> game;
         int testcase = 0;
         int i = 0;

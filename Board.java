@@ -173,7 +173,7 @@ class Board {
             ChessPiece otherPiece = b.getPieceFromSquare(i);
             if (thisPiece != null) {
                 if (!thisPiece.equals(otherPiece)) {
-                    System.out.println("CONLIFCT SQUARE: " + BoardMethods.squareToString(i));
+                    System.out.println("CONFLICT SQUARE: " + BoardMethods.squareToString(i));
                     System.out.println(thisPiece.specialID);
                     System.out.println(otherPiece.specialID);
                     System.out.println(b);
