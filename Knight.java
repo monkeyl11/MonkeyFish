@@ -21,6 +21,18 @@ class Knight extends ChessPiece {
                 if (capturedPiece == null || capturedPiece.pieceColor != this.pieceColor) {
                     moveList.add(new Move(this, capturedPiece, targetSquare, this.pieceColor));
                 }
+                else if (capturedPiece.pieceColor != this.pieceColor) {
+                    moveList.add(new Move(this, capturedPiece, targetSquare, this.pieceColor));
+                    if (capturedPiece.id == PieceID.KING) {
+                        if (pieceInfo != null)
+                            pieceInfo.setChecking();
+                        else
+                            System.out.println("Illegal Position! - " + b);
+                    }
+                }
+                if (pieceInfo != null) {
+                    pieceInfo.addHazardSquare(targetSquare);
+                }
             }
         }
 

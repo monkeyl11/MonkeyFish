@@ -46,6 +46,12 @@ class Pawn extends ChessPiece {
                     if (b.board[pieceFile + i][pieceRank + 1] != null) {
                         if (b.board[pieceFile + i][pieceRank + 1].pieceColor == Color.BLACK) {
                             ChessPiece capturedPiece = b.getPieceFromSquare(targetSquare);
+                            if (capturedPiece.id == PieceID.KING) {
+                                if (pieceInfo != null)
+                                    pieceInfo.setChecking();
+                                else
+                                    System.out.println("Illegal Position! - " + b);
+                            }
                             if (pieceRank + 1 == LAST_RANK_WHITE) {
                                 addPromotions(targetSquare, moveList, capturedPiece);
                             }
@@ -61,6 +67,9 @@ class Pawn extends ChessPiece {
                         Pawn p = (Pawn)b.board[pieceFile + i][pieceRank];
                         if (p.canEnPassant())
                             moveList.add(new Move(this, p, targetSquare, this.pieceColor));
+                    }
+                    if (pieceInfo != null) {
+                        pieceInfo.addHazardSquare(targetSquare);
                     }
                 }
             }
@@ -88,6 +97,12 @@ class Pawn extends ChessPiece {
                     if (b.board[pieceFile + i][pieceRank - 1] != null) {
                         if (b.board[pieceFile + i][pieceRank - 1].pieceColor == Color.WHITE) {
                             ChessPiece capturedPiece = b.getPieceFromSquare(targetSquare);
+                            if (capturedPiece.id == PieceID.KING) {
+                                if (pieceInfo != null)
+                                    pieceInfo.setChecking();
+                                else
+                                    System.out.println("Illegal Position! - " + b);
+                            }
                             if (pieceRank - 1 == LAST_RANK_BLACK) {
                                 addPromotions(targetSquare, moveList, capturedPiece);
                             }
@@ -103,6 +118,9 @@ class Pawn extends ChessPiece {
                         Pawn p = (Pawn)b.board[pieceFile + i][pieceRank];
                         if (p.canEnPassant())
                             moveList.add(new Move(this, p, targetSquare, this.pieceColor));
+                    }
+                    if (pieceInfo != null) {
+                        pieceInfo.addHazardSquare(targetSquare);
                     }
                 }
             }

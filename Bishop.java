@@ -10,10 +10,10 @@ class Bishop extends ChessPiece {
     }
 
     public void possibleMoves(Board b, List<Move> moveList, OppPieceInfo pieceInfo) {
-        checkLine(b, moveList, 1, 1);
-        checkLine(b, moveList, -1, 1);
-        checkLine(b, moveList, 1, -1);
-        checkLine(b, moveList, -1, -1);
+        checkLine(b, moveList, 1, 1, pieceInfo);
+        checkLine(b, moveList, -1, 1, pieceInfo);
+        checkLine(b, moveList, 1, -1, pieceInfo);
+        checkLine(b, moveList, -1, -1, pieceInfo);
     }
 
 

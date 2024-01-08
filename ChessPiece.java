@@ -1,16 +1,18 @@
 import java.util.*;
 
 abstract class ChessPiece {
+
     public PieceID id;
     public double pieceMaterialValue;
     public Color pieceColor;
     protected byte currentSquare;
     protected List<Byte>[] movesForSquare;
     private static int specialIDCounter;
-    public int specialID;
+    private int specialID;
 
     protected static final byte bitmaskRank = 0b00000111;
     protected static final byte bitmaskFile = 0b00111000;
+    private static final int END_SEARCH = 2;
 
     public ChessPiece(double pieceMaterialValue, byte currentSquare, Color pieceColor) {
         this.pieceMaterialValue = pieceMaterialValue;
@@ -31,19 +33,67 @@ abstract class ChessPiece {
     }
 
     //For Bishop, Rook, Queen
-    protected void checkLine(Board b, List<Move> moveList, int fileIncrement, int rankIncrement) {
+    protected void checkLine(Board b, List<Move> moveList, int fileIncrement, int rankIncrement, 
+                            OppPieceInfo pieceInfo) {
         int file = BoardMethods.getFile(currentSquare);
         int rank = BoardMethods.getRank(currentSquare);
+        int stopNum = 0; //when stopNum = 1, stop adding moves, when = 2, exit
+        ChessPiece potentialPinnedPiece = null;
+        Pawn potentialEPHazard = null;
         while (withinBoard(file += fileIncrement, rank += rankIncrement)) {
             ChessPiece p = b.board[file][rank];
             if (p != null) {
                 if (p.pieceColor != this.pieceColor) {
-                    moveList.add(new Move(this, p, (byte)((file << 3) + rank), this.pieceColor));
+                    if (stopNum == 0) {
+                        if (p.id == PieceID.KING) {
+                            if (pieceInfo != null) {
+                                pieceInfo.setChecking();
+                                //immediately end search line
+                                stopNum++;
+                            }
+                            else {
+                                System.out.println("Illegal Position! - " + b);
+                            }
+                        }
+                        else {
+                            potentialPinnedPiece = p;
+                        }
+                        moveList.add(new Move(this, p, (byte)((file << 3) + rank), this.pieceColor));
+                    }
+                    else if (stopNum == 1) {
+                        if (p.id == PieceID.KING) {
+                            if (potentialPinnedPiece != null) {
+                                pieceInfo.addPinnedPiece(potentialPinnedPiece, fileIncrement, rankIncrement);
+                            }
+                            else if (potentialEPHazard != null) {
+                                pieceInfo.setEnPassantHazard(potentialEPHazard);
+                            }
+                        }
+                    }
                 }
-                break;
+                else {
+                    if (pieceInfo != null && stopNum == 0) {
+                        pieceInfo.addHazardSquare((byte)((file << 3) + rank));
+                    }
+                    if (p.id == PieceID.PAWN && ((Pawn)p).canEnPassant()) {
+                        potentialEPHazard = (Pawn)p;
+                    }
+                    else {
+                        stopNum++; //end the search
+                    }
+                }
+                if (pieceInfo == null)
+                    stopNum += END_SEARCH;
+                else
+                    stopNum++;
+                if (stopNum >= END_SEARCH)
+                    break;
             }
             else {
                 moveList.add(new Move(this, null, (byte)((file << 3) + rank), this.pieceColor));
+            }
+            if (pieceInfo != null && stopNum == 0) {
+                pieceInfo.addHazardSquare((byte)((file << 3) + rank));
             }
         }
     }
@@ -74,7 +124,18 @@ abstract class ChessPiece {
             ret = Character.toUpperCase(ret);
         }
         return ret;
-    }    
+    }
+
+    // protected void pieceInfoAddSquare(byte square, OppPieceInfo o) {
+    //     if (o != null)
+    //         o.addHazardSquare(square);
+    // }
+
+    // protected void pieceInfoAddPin(ChessPiece pinnedPiece, int fileDirection, int rankDirection, 
+    //                                 OppPieceInfo o) {
+    //     if (o != null)
+    //         o.addPinnedPiece(pinnedPiece, fileDirection, rankDirection);
+    // }
 
     @Override
     public boolean equals(Object o) {

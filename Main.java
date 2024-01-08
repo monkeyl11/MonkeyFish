@@ -5,11 +5,14 @@ import java.io.FileNotFoundException;
 
 class Main {
     private static Stopwatch stopwatch = new Stopwatch();
+    private static int totalCasesFailed = 0;
+    private static int totalCases = 0;
     
     public static void main(String[] args) {
-        //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
+        //runPlayerGames("./testcases_games/Paehtz.pgn", true, -1);
         testAll();
         System.out.println(stopwatch);
+        System.out.println("Cases failed: " + totalCasesFailed + " / " + totalCases);
         //testUndo(-1);
         //testAllUndo();
         // Position p = new Position(true);
@@ -34,6 +37,7 @@ class Main {
 
     //plays out a game from start, returns number of moves
     public static int playOutGame(Position p, List<String> game, int numMoves, boolean debug) {
+        totalCases++;
         numMoves = numMoves < 0 ? Integer.MAX_VALUE : numMoves;
         int i = 0;
         for (String move: game) {
@@ -42,11 +46,12 @@ class Main {
             }
             try {
                 if (!p.makeMove(move)) {
+                    totalCasesFailed++;
                     if (debug) {
                         System.out.println("GAME: " + game);
                         System.out.println(move + " FAILED\n" + p);
                         System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
-
+                        System.out.println("FEN: " + p.toFEN());
                         //throw new IllegalArgumentException("whatever");
                     }
                     break;
@@ -159,5 +164,10 @@ class Main {
             }
             i++;
         }
+    }
+
+    public static void resetCases() {
+        totalCasesFailed = 0;
+        totalCases = 0;
     }
 }

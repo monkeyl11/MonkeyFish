@@ -36,6 +36,10 @@ public class Stopwatch
 	    return "elapsed time: " + time() + " seconds.";
 	}
 
+	public void reset() {
+		totalTime = 0;
+	}
+
 	/**
 	elapsed time in nanoseconds.
 	@return the time recorded on the stopwatch in nanoseconds

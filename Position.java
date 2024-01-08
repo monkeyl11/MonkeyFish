@@ -225,8 +225,9 @@ class Position {
         }
         addCastlingMoves(side, allMoves);
         if (!ignoreChecks) {
+            return allMoves;
             //do later, remove moves that put the King in check, then return a different list/set
-            return checkRemove(allMoves);
+            //return checkRemove(allMoves);
 
         }
         else {
@@ -246,9 +247,24 @@ class Position {
             -YOU CAN EN PASSANT INTO CHECK
         3. Remove moves that do not move the King out of check (when in check)
             -Remove the checking piece, block the checking piece, move the King out of check */
+        
+        for (Move m: possibleMoves) {
 
+        }
 
         return moveList;
+    }
+
+    //passing in the move list just in case it's needed, since we get it anyway as it is a requirement
+    //when calling possibleMoves()
+    private List<OppPieceInfo> kingSafetyInfo(List<Move> moveList) {
+        ArrayList<OppPieceInfo> pieceInfoList = new ArrayList<>();
+        HashSet<ChessPiece> playerPieces = this.activeColor == Color.WHITE ? blackPieces : whitePieces;
+        for (ChessPiece p: playerPieces) {
+            OppPieceInfo pieceInfo = new OppPieceInfo(p);
+            p.possibleMoves(this.b, moveList, pieceInfo);
+        }
+        return pieceInfoList;
     }
 
     public void addCastlingMoves(Color side, List<Move> moveList) {

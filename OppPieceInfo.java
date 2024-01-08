@@ -10,10 +10,19 @@ class OppPieceInfo {
 
     public HashSet<Byte> hazardSquares; //squares the piece targets
 
-    public boolean enPassantHazard; //opponent pawn that could be en passant-ed
+    public Pawn enPassantHazard; //opponent pawn that could be en passant-ed and will reveal this piece to the King
 
     public OppPieceInfo(ChessPiece oppPiece) {
         this.oppPiece = oppPiece;
+        this.isChecking = false;
+        this.pinnedPiece = null;
+        this.pinDirection = null;
+        this.hazardSquares = new HashSet<>();
+        this.enPassantHazard = null;
+    }
+
+    public void setChecking() {
+        this.isChecking = true;
     }
 
     public void addPinnedPiece(ChessPiece pinnedPiece, int fileDirection, int rankDirection) {
@@ -22,10 +31,10 @@ class OppPieceInfo {
     }
 
     public void addHazardSquare(byte square) {
-        hazardSquares.add(square);
+        this.hazardSquares.add(square);
     }
 
-    public void setEnPassantHazard() {
-        enPassantHazard = true;
+    public void setEnPassantHazard(Pawn p) {
+        this.enPassantHazard = p;
     }
 }
