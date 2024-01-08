@@ -25,7 +25,7 @@ class Knight extends ChessPiece {
                     moveList.add(new Move(this, capturedPiece, targetSquare, this.pieceColor));
                     if (capturedPiece.id == PieceID.KING) {
                         if (pieceInfo != null)
-                            pieceInfo.setChecking();
+                            pieceInfo.setChecking((King)capturedPiece);
                         else
                             System.out.println("Illegal Position! - " + b);
                     }

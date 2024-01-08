@@ -27,7 +27,8 @@ class Position {
 
     private static final byte BOARD_END_INDEX = 7;
 
-
+    private static final byte bitmaskRank = 0b00000111;
+    private static final byte bitmaskFile = 0b00111000;
 
     public Board b;
     public Color activeColor;
@@ -74,6 +75,7 @@ class Position {
         
         //Field 1: Board setup
         b = new Board();
+        prevMoves = new Stack<>();
         String[] ranks = fields[0].split("/");
         if (ranks.length != 8) {
             throw new IllegalArgumentException("FEN Error: Board Setup");
@@ -254,13 +256,14 @@ class Position {
             -Remove the checking piece, block the checking piece, move the King out of check */
         
         ArrayList<Move> oppMoveList = new ArrayList<>(64);
-        OppPieceInfo.resetHazardSquares();
+        OppPieceInfo.reset();
         List<OppPieceInfo> oppPieceInfo = kingSafetyInfo(oppMoveList);
         HashSet<Byte> invalidSquares = OppPieceInfo.hazardSquares;
         ArrayList<ChessPiece> checkingPieces = new ArrayList<>(2);
         ArrayList<ChessPiece> pinnedPieces = new ArrayList<>(4);
         ArrayList<int[]> pinnedPieceDirections = new ArrayList<>(4);
         
+        Pawn enPassantHazard = null;
         for (OppPieceInfo piece: oppPieceInfo) {
             if (piece.isChecking) {
                 checkingPieces.add(piece.oppPiece);
@@ -269,9 +272,11 @@ class Position {
                 pinnedPieces.add(piece.pinnedPiece);
                 pinnedPieceDirections.add(piece.pinDirection);
             }
+            if (piece.enPassantHazard != null) {
+                enPassantHazard = piece.enPassantHazard;
+            }
         }
         int pinnedPieceIndex;
-        int[] pinnedDirection;
         PieceID currentPieceID;
         for (Move m: possibleMoves) {
             currentPieceID = m.currentPiece.id;
@@ -280,29 +285,50 @@ class Position {
             if (!checkingPieces.isEmpty()) {
                 if (currentPieceID == PieceID.KING) {
                     if (invalidSquares.contains(m.endSquare))
-                        continue;                  
+                        continue;
                 }
                 else if (checkingPieces.size() > 1) {
                     continue;
                 }
                 else {
-                    //To do, either capture the attacker or block
+                    //only one checking piece
+                    ChessPiece checkingPiece = checkingPieces.get(0);
+                    if (m.capturedPiece != checkingPieces.get(0)) {
+                        //move did not capture checking piece
+                        if (checkingPiece.id == PieceID.KNIGHT
+                            || checkingPiece.id == PieceID.PAWN) {
+                            continue;
+                        }
+                        else {
+                            byte kingSquare = OppPieceInfo.king.currentSquare;
+                            int checkerToBlockerDir = getDirection(
+                                (checkingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
+                                (checkingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
+                            int blockerToKingDir = getDirection(
+                                (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
+                                (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
+                            if (checkerToBlockerDir != blockerToKingDir) {
+                                continue;
+                            }
+                        }
+                        
+                    }
                 }
             }
-            else if (m.isKingsideCastle) {
-                if (invalidSquares.contains((byte)(WK_CASTLING_SQUARES[0] + isBlack)) 
+            if (m.isKingsideCastle) {
+                if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[0] + isBlack)) 
                     || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[1] + isBlack))) {
                     continue;
                 }
             }
             else if (m.isQueensideCastle) {
-                if (invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[0] + isBlack)) 
+                if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[0] + isBlack)) 
                     || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[1] + isBlack))) {
                     continue;
                 }
             }
             else {
-                //Not in check, not castling
+                //Not castling
                 if (currentPieceID == PieceID.KING) {
                     if (invalidSquares.contains(m.endSquare))
                         continue;
@@ -310,8 +336,23 @@ class Position {
                 else {
                     pinnedPieceIndex = pinnedPieces.indexOf(m.currentPiece);
                     if (pinnedPieceIndex != -1) {
+                        //find differences and normalize
                         if (currentPieceID == PieceID.KNIGHT) {
                             continue;
+                        }
+                        else {
+                            if (currentPieceID == PieceID.PAWN) {
+                                if (m.capturedPiece != null && m.capturedPiece.equals(enPassantHazard)) {
+                                    continue;
+                                }
+                            }
+                            int pieceFileDir = (m.startSquare & bitmaskFile) - (m.endSquare & bitmaskFile);
+                            int pieceRankDir = (m.startSquare & bitmaskRank) - (m.endSquare & bitmaskRank);
+                            int correctDir = getDirection(pinnedPieceDirections.get(pinnedPieceIndex)[0], 
+                                                           pinnedPieceDirections.get(pinnedPieceIndex)[1]);
+                            if (Math.abs(correctDir) != Math.abs(getDirection(pieceFileDir, pieceRankDir))) {
+                                continue;
+                            }
                         }
                     }
                 }
@@ -320,6 +361,12 @@ class Position {
         }
 
         return moveList;
+    }
+
+    private int getDirection(int fileDiff, int rankDiff) {
+        rankDiff = rankDiff == 0 ? 0 : rankDiff / Math.abs(rankDiff);
+        fileDiff = fileDiff == 0 ? 0 : fileDiff / Math.abs(fileDiff);
+        return fileDiff * 10 + rankDiff;
     }
 
     //passing in the move list just in case it's needed, since we get it anyway as it is a requirement
@@ -451,7 +498,7 @@ class Position {
     public boolean makeMove(String s) {
         Move m = algebraicNotationToMove(s);
         if (m == null) {
-            //System.out.println(this.toFEN());
+            System.out.println(this.toFEN() + "\nIllegal Move: " + s);
             return false;
         }
         else {
@@ -686,7 +733,7 @@ class Position {
             }
             else {
                 if (s.length() == 0) {
-                    //System.out.println("Multiple possible moves given your notation, disambiguation required");
+                    System.out.println("Multiple possible moves given your notation, disambiguation required");
                 }
                 else {
                     System.out.println("Unknown notation error");

@@ -47,7 +47,7 @@ abstract class ChessPiece {
                     if (stopNum == 0) {
                         if (p.id == PieceID.KING) {
                             if (pieceInfo != null) {
-                                pieceInfo.setChecking();
+                                pieceInfo.setChecking((King)p);
                                 //immediately end search line
                                 stopNum++;
                             }

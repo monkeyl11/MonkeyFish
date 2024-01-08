@@ -9,9 +9,10 @@ class Main {
     private static int totalCases = 0;
     
     public static void main(String[] args) {
-        //Position p = new Position("r3kb1r/pq4p1/4b1n1/2ppBp2/NPpP4/2P5/P5BP/R2QR1K1 b q - 4 23");
+        //Position p = new Position("rn1k1b1r/ppp2ppp/4bn2/4p1B1/4P3/2N5/PPP2PPP/2KR1BNR b - - 3 7");
         //System.out.println(p.legalMoves());
         //System.out.println(p);
+        //p.makeMove("Nd7");
         //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
         testAll();
         System.out.println(stopwatch);
