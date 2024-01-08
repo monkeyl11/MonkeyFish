@@ -267,6 +267,7 @@ class Position {
         ArrayList<int[]> pinnedPieceDirections = new ArrayList<>(4);
         
         Pawn enPassantHazard = null;
+        ChessPiece EPCheckingPiece = null;
         for (OppPieceInfo piece: oppPieceInfo) {
             if (piece.isChecking) {
                 checkingPieces.add(piece.oppPiece);
@@ -277,9 +278,9 @@ class Position {
             }
             if (piece.enPassantHazard != null) {
                 enPassantHazard = piece.enPassantHazard;
+                EPCheckingPiece = piece.oppPiece;
             }
         }
-        System.out.println(enPassantHazard);
         int pinnedPieceIndex;
         PieceID currentPieceID;
         for (Move m: possibleMoves) {
@@ -304,7 +305,7 @@ class Position {
                             continue;
                         }
                         else {
-                            byte kingSquare = OppPieceInfo.king.currentSquare;
+                            byte kingSquare = getKing().currentSquare;
                             int checkerToBlockerDir = getDirection(
                                 (checkingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
                                 (checkingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
@@ -339,8 +340,19 @@ class Position {
                 }
                 else {
                     if (currentPieceID == PieceID.PAWN) {
-                        if (m.capturedPiece != null && m.capturedPiece.equals(enPassantHazard)) {
-                            continue;
+                        if (m.capturedPiece != null && m.capturedPiece.equals(enPassantHazard)
+                            && (m.startSquare & bitmaskRank) == (m.capturedPiece.currentSquare & bitmaskRank)) {
+                            //VERY RARE CASE TEST
+                            byte kingSquare = getKing().currentSquare;
+                            int checkerToBlockerDir = getDirection(
+                                (EPCheckingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
+                                (EPCheckingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
+                            int blockerToKingDir = getDirection(
+                                (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
+                                (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
+                            if (checkerToBlockerDir != blockerToKingDir) {
+                                continue;
+                            }
                         }
                     }
                     pinnedPieceIndex = pinnedPieces.indexOf(m.currentPiece);
@@ -370,6 +382,15 @@ class Position {
         rankDiff = rankDiff == 0 ? 0 : rankDiff / Math.abs(rankDiff);
         fileDiff = fileDiff == 0 ? 0 : fileDiff / Math.abs(fileDiff);
         return fileDiff * 10 + rankDiff;
+    }
+
+    private ChessPiece getKing() {
+        HashSet<ChessPiece> pieces = this.activeColor == Color.WHITE ? whitePieces : blackPieces;
+        for (ChessPiece p: pieces) {
+            if (p.id == PieceID.KING)
+                return p;
+        }
+        return null;
     }
 
     //passing in the move list just in case it's needed, since we get it anyway as it is a requirement
@@ -587,7 +608,7 @@ class Position {
         }
     }
 
-    private Move algebraicNotationToMove(String s) {
+    public Move algebraicNotationToMove(String s) {
         List<Move> legalMoves = legalMoves();
         s = s.replace("#", ""); //checkmate
         s = s.replace("+", ""); //checks

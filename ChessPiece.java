@@ -28,7 +28,7 @@ abstract class ChessPiece {
         this.currentSquare = newSquare;
     }
 
-    protected boolean withinBoard(int rank, int file) {
+    protected boolean withinBoard(int file, int rank) {
         return rank < 8 && rank >= 0 && file < 8 && file >= 0;
     }
 
@@ -48,6 +48,10 @@ abstract class ChessPiece {
                         if (p.id == PieceID.KING) {
                             if (pieceInfo != null) {
                                 pieceInfo.setChecking((King)p);
+                                //add hazard square for square beyond king
+                                if (pieceInfo != null && withinBoard(file + fileIncrement, rank + rankIncrement)) {
+                                    pieceInfo.addHazardSquare((byte)(((file + fileIncrement) << 3) + (rank + rankIncrement)));
+                                }
                                 //immediately end search line
                                 stopNum++;
                             }
@@ -77,6 +81,16 @@ abstract class ChessPiece {
                     }
                     if (p.id == PieceID.PAWN && ((Pawn)p).canEnPassant()) {
                         potentialEPHazard = (Pawn)p;
+                        //need to find very special case where check is blocked by opposing pawn
+                        //but this pawn remains an en passant hazard as the capture removes both pawns
+                        //from a rank and opens up the King to check
+                        if (rankIncrement == 0 && withinBoard(file + fileIncrement, rank)) {
+                            ChessPiece adjPiece = b.getPieceFromSquare((byte)(((file + fileIncrement) << 3) + rank));
+                            if (adjPiece != null && adjPiece.id == PieceID.PAWN 
+                                && adjPiece.pieceColor != potentialEPHazard.pieceColor) {
+                                file += fileIncrement;
+                            }
+                        }
                     }
                     else {
                         stopNum++; //end the search

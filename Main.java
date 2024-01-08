@@ -2,44 +2,42 @@ import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException; 
 
+import java.io.FileReader;
+
+import org.json.simple.JSONArray; 
+import org.json.simple.JSONObject; 
+import org.json.simple.parser.*; 
+
 
 class Main {
     private static Stopwatch stopwatch = new Stopwatch();
     private static int totalCasesFailed = 0;
     private static int totalCases = 0;
     
-    public static void main(String[] args) {
-        testFENs();
+    public static void main(String[] args){
+        try {
+            testSpecialPositions();
+        }
+        catch (Exception e) {
+            System.out.println(e);
+        }
 
-        //p.makeMove("Nd7");
-        //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
-        //testAll();
-        //System.out.println(stopwatch);
-        //System.out.println("Cases failed: " + totalCasesFailed + " / " + totalCases);
-        //System.out.println("Moves made: " + Position.numTimesLMCalled);
+        //runPlayerGames("./testcase_games/Paehtz.pgn", false, -1);
+        testAll();
+
         
 
 
         //testUndo(-1);
         //testAllUndo();
-        // Position p = new Position(true);
-        // PGNParser parser = new PGNParser("./testcases_games/Adams.pgn");
-        // List<String> game;
-        // game = parser.nextGame();
-        // playOutGame(p, game, 45, false);
-        // System.out.println(p);
-        // System.out.println(((Pawn)(p.b.getPieceFromSquare("b7"))).canEnPassant());
-        // Scanner s = new Scanner(System.in);
-        // while (true) {
-        //     System.out.println(p);
-        //     while (true) {
-        //         System.out.println("Enter move: ");
-        //         String response = s.nextLine();
-        //         if (p.makeMove(response)) {
-        //             break;
-        //         }
-        //     }
-        // }
+    }
+
+    public static void testCase(String fen, String move) {
+        Position p = new Position(fen);
+        //p.makeMove(move);
+        p.legalMoves();
+        System.out.println(p);
+
     }
 
     public static void testFENs() {
@@ -49,6 +47,49 @@ class Main {
             Position p = new Position(s.nextLine());
             System.out.println(p.legalMoves());
             System.out.println(p);
+        }
+    }
+
+    public static void testSpecialPositions() throws Exception{
+        boolean passedAll = true;
+        File[] files = new File("./testcase_positions").listFiles();
+        for (File f: files) {
+            Object obj = new JSONParser().parse(new FileReader(f));
+            JSONObject jo = (JSONObject) obj;
+            ArrayList<JSONObject> testCases = (ArrayList)jo.get("testCases");
+            for (JSONObject testcase: testCases) {
+                //System.out.println(JSONObj.toString());
+                HashMap startingInfo = (HashMap)testcase.get("start");
+                Position p = new Position((String)(startingInfo.get("fen")));
+                List<Move> generatedMoves = p.legalMoves();
+                List<Move> expectedMoves = new ArrayList<>(64);
+                ArrayList<JSONObject> moves = (ArrayList<JSONObject>)testcase.get("expected");
+                for (JSONObject m: moves) {
+                    expectedMoves.add(p.algebraicNotationToMove((String)(m.get("move"))));
+                }
+                boolean testcasePassed = true;
+                for (Move m: generatedMoves) {
+                    if (!expectedMoves.contains(m)) {
+                        System.out.println("ERROR: Extra move generated- " + m);
+                        testcasePassed = false;
+                        passedAll = false;
+                    }
+                }
+                for (Move m: expectedMoves) {
+                    if (!generatedMoves.contains(m)) {
+                        System.out.println("ERROR: Move missing- " + m);
+                        testcasePassed = false;
+                        passedAll = false;
+                    }
+                }
+                if (!testcasePassed) {
+                    System.out.println("TESTCASE FAILED- " + startingInfo.get("fen"));
+                }
+            }
+
+        }
+        if (passedAll) {
+            System.out.println("PASSED ALL SPECIAL TEST CASES");
         }
     }
 
@@ -82,23 +123,6 @@ class Main {
                 System.out.println("LEGAL MOVES GIVEN: " + p.legalMoves());
                 throw e;
             }
-            //Test FEN generation
-            // try {
-            //     ChessPiece.resetIDCounter();
-            //     Position p2 = new Position(p.toFEN());
-            //     if (!p2.FENEquals(p)) {
-            //         System.out.println("FEN Fail");
-            //         System.out.println(p);
-            //         System.out.println(p.toFEN());
-            //         throw new IllegalArgumentException();
-            //     }
-            // }
-            // catch (Exception e) {
-            //     System.out.println("FEN Fail");
-            //     System.out.println(p);
-            //     System.out.println(p.toFEN());
-            //     throw e;
-            // }
             i++;
         }
         return i;
@@ -111,7 +135,7 @@ class Main {
         PGNParser parser = new PGNParser(s);
         List<String> game;
         int testcase = 0;
-        s = s.replace(".\\testcases_games\\", "");
+        s = s.replace(".\\testcase_games\\", "");
         s = s.replace(".pgn", "");
         System.out.println("PLAYING OUT " + s);
         while(true && testcase < numGames) {
@@ -131,14 +155,17 @@ class Main {
 
     //Runs through ~400k games
     public static void testAll() {
-        File[] files = new File("./testcases_games").listFiles();
+        File[] files = new File("./testcase_games").listFiles();
         for (File f: files) {
             runPlayerGames(f.toString(), false, -1);
         }
+        System.out.println(stopwatch);
+        System.out.println("Cases failed: " + totalCasesFailed + " / " + totalCases);
+        resetCases();
     }
 
     public static void testAllUndo() {
-        File[] files = new File("./testcases_games").listFiles();
+        File[] files = new File("./testcase_games").listFiles();
         for (File f: files) {
             testUndo(f.toString(),  -1);
         }
@@ -148,7 +175,7 @@ class Main {
         Position p = null;
         Position pComp = null;
         PGNParser parser = new PGNParser(s);
-        s = s.replace(".\\testcases_games\\", "");
+        s = s.replace(".\\testcase_games\\", "");
         s = s.replace(".pgn", "");
         System.out.println("PLAYING OUT " + s);
         List<String> game;
