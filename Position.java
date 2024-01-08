@@ -40,6 +40,8 @@ class Position {
 
     private Stack<Move> prevMoves;
 
+    public static int numTimesLMCalled = 0;
+
 
     //private HashMap<Position, Integer> prevPositions; //tracking three-fold
     private int turn; //track 50-move rule (100 turn), also en passant
@@ -226,6 +228,7 @@ class Position {
 
     //Takes care of castling and eliminates moves that put King in check
     public List<Move> legalMoves(Color side, boolean ignoreChecks) {
+
         ArrayList<Move> allMoves = new ArrayList<>(64);
         HashSet<ChessPiece> playerPieces = side == Color.WHITE ? whitePieces : blackPieces;
         for (ChessPiece p: playerPieces) {
@@ -276,6 +279,7 @@ class Position {
                 enPassantHazard = piece.enPassantHazard;
             }
         }
+        System.out.println(enPassantHazard);
         int pinnedPieceIndex;
         PieceID currentPieceID;
         for (Move m: possibleMoves) {
@@ -334,18 +338,17 @@ class Position {
                         continue;
                 }
                 else {
+                    if (currentPieceID == PieceID.PAWN) {
+                        if (m.capturedPiece != null && m.capturedPiece.equals(enPassantHazard)) {
+                            continue;
+                        }
+                    }
                     pinnedPieceIndex = pinnedPieces.indexOf(m.currentPiece);
                     if (pinnedPieceIndex != -1) {
-                        //find differences and normalize
                         if (currentPieceID == PieceID.KNIGHT) {
                             continue;
                         }
                         else {
-                            if (currentPieceID == PieceID.PAWN) {
-                                if (m.capturedPiece != null && m.capturedPiece.equals(enPassantHazard)) {
-                                    continue;
-                                }
-                            }
                             int pieceFileDir = (m.startSquare & bitmaskFile) - (m.endSquare & bitmaskFile);
                             int pieceRankDir = (m.startSquare & bitmaskRank) - (m.endSquare & bitmaskRank);
                             int correctDir = getDirection(pinnedPieceDirections.get(pinnedPieceIndex)[0], 
@@ -418,7 +421,6 @@ class Position {
     }
 
     public void makeMove(Move m) {
-        //TO DO: get rid of en passant for the other side
         boolean resetHMClock = false;
         b.makeMove(m);
         //Set opposing pawns' en passant variable to false

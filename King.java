@@ -22,6 +22,9 @@ class King extends ChessPiece {
                     if (capturedPiece == null || capturedPiece.pieceColor != this.pieceColor) {
                         moveList.add(new Move(this, capturedPiece, targetSquare, this.pieceColor));
                     }
+                    if (pieceInfo != null) {
+                        pieceInfo.addHazardSquare(targetSquare);
+                    }
                 }
             }
         }

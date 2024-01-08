@@ -9,14 +9,14 @@ class Main {
     private static int totalCases = 0;
     
     public static void main(String[] args) {
-        //Position p = new Position("rn1k1b1r/ppp2ppp/4bn2/4p1B1/4P3/2N5/PPP2PPP/2KR1BNR b - - 3 7");
-        //System.out.println(p.legalMoves());
-        //System.out.println(p);
+        testFENs();
+
         //p.makeMove("Nd7");
         //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
-        testAll();
-        System.out.println(stopwatch);
-        System.out.println("Cases failed: " + totalCasesFailed + " / " + totalCases);
+        //testAll();
+        //System.out.println(stopwatch);
+        //System.out.println("Cases failed: " + totalCasesFailed + " / " + totalCases);
+        //System.out.println("Moves made: " + Position.numTimesLMCalled);
         
 
 
@@ -40,6 +40,16 @@ class Main {
         //         }
         //     }
         // }
+    }
+
+    public static void testFENs() {
+        Scanner s = new Scanner(System.in);
+        while(true) {
+            System.out.println("Enter FEN: ");
+            Position p = new Position(s.nextLine());
+            System.out.println(p.legalMoves());
+            System.out.println(p);
+        }
     }
 
     //plays out a game from start, returns number of moves
