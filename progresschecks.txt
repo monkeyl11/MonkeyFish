@@ -5,3 +5,5 @@
 3. Check-checking but only avoiding invalid squares for the King: 121.604s, 13927 Failed
 
 4. Check-checking, now also avoiding illegal castling: 117.602s, 13927 Failed
+
+5. Check-checking, now also avoiding pinned Knights, some check protection, 119.54s, 2764 Failed

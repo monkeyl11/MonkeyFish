@@ -254,37 +254,68 @@ class Position {
             -Remove the checking piece, block the checking piece, move the King out of check */
         
         ArrayList<Move> oppMoveList = new ArrayList<>(64);
+        OppPieceInfo.resetHazardSquares();
         List<OppPieceInfo> oppPieceInfo = kingSafetyInfo(oppMoveList);
-        HashSet<Byte> invalidSquares = new HashSet<>(64);
+        HashSet<Byte> invalidSquares = OppPieceInfo.hazardSquares;
         ArrayList<ChessPiece> checkingPieces = new ArrayList<>(2);
+        ArrayList<ChessPiece> pinnedPieces = new ArrayList<>(4);
+        ArrayList<int[]> pinnedPieceDirections = new ArrayList<>(4);
         
         for (OppPieceInfo piece: oppPieceInfo) {
-            invalidSquares.addAll(piece.hazardSquares);
             if (piece.isChecking) {
                 checkingPieces.add(piece.oppPiece);
             }
+            if (piece.pinnedPiece != null) {
+                pinnedPieces.add(piece.pinnedPiece);
+                pinnedPieceDirections.add(piece.pinDirection);
+            }
         }
-        
+        int pinnedPieceIndex;
+        int[] pinnedDirection;
+        PieceID currentPieceID;
         for (Move m: possibleMoves) {
-            // byte isBlack = m.color == Color.WHITE ? 0 : BOARD_END_INDEX;
-            // if (m.isKingsideCastle) {
-            //     if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[0] + isBlack)) 
-            //         || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[1] + isBlack))) {
-            //         continue;
-            //     }
-            // }
-            // else if (m.isQueensideCastle) {
-            //     if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[0] + isBlack)) 
-            //         || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[1] + isBlack))) {
-            //         continue;
-            //     }
-            // }
-            // else {
-            //     if (m.currentPiece.id == PieceID.KING && invalidSquares.contains(m.endSquare)) {
-            //         continue;
-            //     }
-            // }
-
+            currentPieceID = m.currentPiece.id;
+            byte isBlack = m.color == Color.WHITE ? 0 : BOARD_END_INDEX;
+            //In check
+            if (!checkingPieces.isEmpty()) {
+                if (currentPieceID == PieceID.KING) {
+                    if (invalidSquares.contains(m.endSquare))
+                        continue;                  
+                }
+                else if (checkingPieces.size() > 1) {
+                    continue;
+                }
+                else {
+                    //To do, either capture the attacker or block
+                }
+            }
+            else if (m.isKingsideCastle) {
+                if (invalidSquares.contains((byte)(WK_CASTLING_SQUARES[0] + isBlack)) 
+                    || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[1] + isBlack))) {
+                    continue;
+                }
+            }
+            else if (m.isQueensideCastle) {
+                if (invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[0] + isBlack)) 
+                    || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[1] + isBlack))) {
+                    continue;
+                }
+            }
+            else {
+                //Not in check, not castling
+                if (currentPieceID == PieceID.KING) {
+                    if (invalidSquares.contains(m.endSquare))
+                        continue;
+                }
+                else {
+                    pinnedPieceIndex = pinnedPieces.indexOf(m.currentPiece);
+                    if (pinnedPieceIndex != -1) {
+                        if (currentPieceID == PieceID.KNIGHT) {
+                            continue;
+                        }
+                    }
+                }
+            }
             moveList.add(m);
         }
 
@@ -326,7 +357,7 @@ class Position {
             && castlingRights[crIndex][0] == 0
             && b.getPieceFromSquare((byte)(king.currentSquare + NEXT_FILE)) == null
             && b.getPieceFromSquare((byte)(king.currentSquare + NEXT_FILE * 2)) == null) { 
-            moveList.add(new Move(side, true, false));
+            moveList.add(new Move(side, true, false, king));
         }
         //queenside castle
         if (qRook != null && king.id == PieceID.KING && qRook.id == PieceID.ROOK
@@ -335,7 +366,7 @@ class Position {
             && castlingRights[crIndex][1] == 0
             && b.getPieceFromSquare((byte)(king.currentSquare + PREV_FILE * 2)) == null
             && b.getPieceFromSquare((byte)(king.currentSquare + PREV_FILE * 3)) == null) {   
-            moveList.add(new Move(side, false, true));
+            moveList.add(new Move(side, false, true, king));
         }
     }
 

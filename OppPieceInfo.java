@@ -8,7 +8,7 @@ class OppPieceInfo {
     public ChessPiece pinnedPiece; //piece that is pinned to the king
     public int[] pinDirection; //direction of the piece pinned to the king
 
-    public HashSet<Byte> hazardSquares; //squares the piece targets
+    public static HashSet<Byte> hazardSquares; //squares this side targets
 
     public Pawn enPassantHazard; //opponent pawn that could be en passant-ed and will reveal this piece to the King
 
@@ -17,7 +17,6 @@ class OppPieceInfo {
         this.isChecking = false;
         this.pinnedPiece = null;
         this.pinDirection = null;
-        this.hazardSquares = new HashSet<>();
         this.enPassantHazard = null;
     }
 
@@ -36,5 +35,9 @@ class OppPieceInfo {
 
     public void setEnPassantHazard(Pawn p) {
         this.enPassantHazard = p;
+    }
+
+    public static void resetHazardSquares() {
+        hazardSquares = new HashSet<>(64);
     }
 }

@@ -32,10 +32,11 @@ class Move {
     }
 
     //Castling
-    public Move(Color color, boolean isKingsideCastle, boolean isQueensideCastle) {
+    public Move(Color color, boolean isKingsideCastle, boolean isQueensideCastle, ChessPiece king) {
         this.color = color;
         this.isKingsideCastle = isKingsideCastle;
         this.isQueensideCastle = isQueensideCastle;
+        this.currentPiece = king;
     }
 
     @Override
