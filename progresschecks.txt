@@ -1,3 +1,5 @@
-No Check-checking- 53.8s
+1. No Check-checking- 53.8s
 
-No Check-checking but additional piece info checks added: 54.149s, 13927 Failed
+2. No Check-checking but additional piece info checks added: 54.149s, 13927 Failed
+
+3. Check-checking but only avoiding invalid squares for the King: 121.604s, 13927 Failed

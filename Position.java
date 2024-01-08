@@ -218,17 +218,16 @@ class Position {
 
     //Takes care of castling and eliminates moves that put King in check
     public List<Move> legalMoves(Color side, boolean ignoreChecks) {
-        ArrayList<Move> allMoves = new ArrayList<>();
+        ArrayList<Move> allMoves = new ArrayList<>(64);
         HashSet<ChessPiece> playerPieces = side == Color.WHITE ? whitePieces : blackPieces;
         for (ChessPiece p: playerPieces) {
             p.possibleMoves(this.b, allMoves, null);
         }
         addCastlingMoves(side, allMoves);
         if (!ignoreChecks) {
-            return allMoves;
+            return checkRemove(allMoves);
             //do later, remove moves that put the King in check, then return a different list/set
             //return checkRemove(allMoves);
-
         }
         else {
             return allMoves;
@@ -240,7 +239,7 @@ class Position {
     }
 
     private List<Move> checkRemove(List<Move> possibleMoves) {
-        ArrayList<Move> moveList = new ArrayList<>();
+        ArrayList<Move> moveList = new ArrayList<>(64);
         /* NEED to do:
         1. Remove King moves that go to a square in check
         2. Remove moves from pieces pinned to the king that put the King in check
@@ -248,8 +247,27 @@ class Position {
         3. Remove moves that do not move the King out of check (when in check)
             -Remove the checking piece, block the checking piece, move the King out of check */
         
+        ArrayList<Move> oppMoveList = new ArrayList<>(64);
+        List<OppPieceInfo> oppPieceInfo = kingSafetyInfo(oppMoveList);
+        HashSet<Byte> invalidSquares = new HashSet<>(64);
+        
+        for (OppPieceInfo piece: oppPieceInfo) {
+            invalidSquares.addAll(piece.hazardSquares);
+        }
+        
         for (Move m: possibleMoves) {
+            if (m.isKingsideCastle) {
 
+            }
+            else if (m.isQueensideCastle) {
+
+            }
+            else {
+                if (m.currentPiece.id == PieceID.KING && invalidSquares.contains(m.endSquare))
+                    continue;
+            }
+
+            moveList.add(m);
         }
 
         return moveList;
@@ -258,7 +276,7 @@ class Position {
     //passing in the move list just in case it's needed, since we get it anyway as it is a requirement
     //when calling possibleMoves()
     private List<OppPieceInfo> kingSafetyInfo(List<Move> moveList) {
-        ArrayList<OppPieceInfo> pieceInfoList = new ArrayList<>();
+        ArrayList<OppPieceInfo> pieceInfoList = new ArrayList<>(16);
         HashSet<ChessPiece> playerPieces = this.activeColor == Color.WHITE ? blackPieces : whitePieces;
         for (ChessPiece p: playerPieces) {
             OppPieceInfo pieceInfo = new OppPieceInfo(p);

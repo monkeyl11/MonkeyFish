@@ -9,7 +9,7 @@ class Main {
     private static int totalCases = 0;
     
     public static void main(String[] args) {
-        //runPlayerGames("./testcases_games/Paehtz.pgn", true, -1);
+        //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
         testAll();
         System.out.println(stopwatch);
         System.out.println("Cases failed: " + totalCasesFailed + " / " + totalCases);
