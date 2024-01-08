@@ -9,10 +9,16 @@ class Main {
     private static int totalCases = 0;
     
     public static void main(String[] args) {
+        //Position p = new Position("r3kb1r/pq4p1/4b1n1/2ppBp2/NPpP4/2P5/P5BP/R2QR1K1 b q - 4 23");
+        //System.out.println(p.legalMoves());
+        //System.out.println(p);
         //runPlayerGames("./testcases_games/Paehtz.pgn", false, -1);
         testAll();
         System.out.println(stopwatch);
         System.out.println("Cases failed: " + totalCasesFailed + " / " + totalCases);
+        
+
+
         //testUndo(-1);
         //testAllUndo();
         // Position p = new Position(true);

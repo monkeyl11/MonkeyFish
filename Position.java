@@ -8,13 +8,13 @@ class Position {
     private static final byte WK_ROOK_SQUARE = 0b00111000;
     private static final byte WQ_ROOK_SQUARE = 0b00000000;
     private static final byte[] WK_CASTLING_SQUARES = {0b00101000, 0b00110000};
-    private static final byte[] WQ_CASTLING_SQUARES = {0b00001000, 0b00010000, 0b00011000};
+    private static final byte[] WQ_CASTLING_SQUARES = {0b00010000, 0b00011000};
 
     private static final byte BK_SQUARE = 0b00100111;
     private static final byte BK_ROOK_SQUARE = 0b00111111;
     private static final byte BQ_ROOK_SQUARE = 0b00000111;
-    private static final byte[] BK_CASTLING_SQUARES = {0b00101111, 0b00110111};
-    private static final byte[] BQ_CASTLING_SQUARES = {0b00001111, 0b00010111, 0b00011111};
+    //private static final byte[] BK_CASTLING_SQUARES = {0b00101111, 0b00110111};
+    //private static final byte[] BQ_CASTLING_SQUARES = {0b00010111, 0b00011111};
 
     private static final int NEXT_FILE = 8;
     private static final int PREV_FILE = -8;
@@ -266,24 +266,24 @@ class Position {
         }
         
         for (Move m: possibleMoves) {
-            byte isBlack = m.color == Color.WHITE ? 0 : BOARD_END_INDEX;
-            if (m.isKingsideCastle) {
-                if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[0] + isBlack)) 
-                    || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[1] + isBlack))) {
-                    continue;
-                }
-            }
-            else if (m.isQueensideCastle) {
-                if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[0] + isBlack)) 
-                    || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[1] + isBlack))
-                    || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[2] + isBlack))) {
-                    continue;
-                }
-            }
-            else {
-                if (m.currentPiece.id == PieceID.KING && invalidSquares.contains(m.endSquare))
-                    continue;
-            }
+            // byte isBlack = m.color == Color.WHITE ? 0 : BOARD_END_INDEX;
+            // if (m.isKingsideCastle) {
+            //     if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[0] + isBlack)) 
+            //         || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[1] + isBlack))) {
+            //         continue;
+            //     }
+            // }
+            // else if (m.isQueensideCastle) {
+            //     if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[0] + isBlack)) 
+            //         || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[1] + isBlack))) {
+            //         continue;
+            //     }
+            // }
+            // else {
+            //     if (m.currentPiece.id == PieceID.KING && invalidSquares.contains(m.endSquare)) {
+            //         continue;
+            //     }
+            // }
 
             moveList.add(m);
         }
@@ -299,6 +299,7 @@ class Position {
         for (ChessPiece p: playerPieces) {
             OppPieceInfo pieceInfo = new OppPieceInfo(p);
             p.possibleMoves(this.b, moveList, pieceInfo);
+            pieceInfoList.add(pieceInfo);
         }
         return pieceInfoList;
     }
@@ -419,6 +420,7 @@ class Position {
     public boolean makeMove(String s) {
         Move m = algebraicNotationToMove(s);
         if (m == null) {
+            //System.out.println(this.toFEN());
             return false;
         }
         else {
@@ -516,7 +518,7 @@ class Position {
                     return m;
                 }
             }
-            System.out.println("Castling is not on option");
+            System.out.println("Castling is not an option");
             return null;
         }
         else if (s.toLowerCase().equals("o-o-o")) {
