@@ -3,3 +3,5 @@
 2. No Check-checking but additional piece info checks added: 54.149s, 13927 Failed
 
 3. Check-checking but only avoiding invalid squares for the King: 121.604s, 13927 Failed
+
+4. Check-checking, now also avoiding illegal castling: 117.602s, 13927 Failed

@@ -2,13 +2,19 @@ import java.util.*;
 
 
 class Position {
-    private static final byte WHITE_KING_SQUARE = 0b00100000;
-    private static final byte WHITE_K_ROOK_SQUARE = 0b00111000;
-    private static final byte WHITE_Q_ROOK_SQUARE = 0b00000000;
+    //Using binary for now because im too lazy to use another enum, will change later
+    //Also it looks cool :pleading_emoji:
+    private static final byte WK_SQUARE = 0b00100000;
+    private static final byte WK_ROOK_SQUARE = 0b00111000;
+    private static final byte WQ_ROOK_SQUARE = 0b00000000;
+    private static final byte[] WK_CASTLING_SQUARES = {0b00101000, 0b00110000};
+    private static final byte[] WQ_CASTLING_SQUARES = {0b00001000, 0b00010000, 0b00011000};
 
-    private static final byte BLACK_KING_SQUARE = 0b00100111;
-    private static final byte BLACK_K_ROOK_SQUARE = 0b00111111;
-    private static final byte BLACK_Q_ROOK_SQUARE = 0b00000111;
+    private static final byte BK_SQUARE = 0b00100111;
+    private static final byte BK_ROOK_SQUARE = 0b00111111;
+    private static final byte BQ_ROOK_SQUARE = 0b00000111;
+    private static final byte[] BK_CASTLING_SQUARES = {0b00101111, 0b00110111};
+    private static final byte[] BQ_CASTLING_SQUARES = {0b00001111, 0b00010111, 0b00011111};
 
     private static final int NEXT_FILE = 8;
     private static final int PREV_FILE = -8;
@@ -19,7 +25,7 @@ class Position {
     private static final int ASCII_FILE_CONVERSION_DIFF = 97;
     private static final int ASCII_RANK_CONVERSION_DIFF = 49;
 
-    private static final int BOARD_END_INDEX = 7;
+    private static final byte BOARD_END_INDEX = 7;
 
 
 
@@ -250,17 +256,29 @@ class Position {
         ArrayList<Move> oppMoveList = new ArrayList<>(64);
         List<OppPieceInfo> oppPieceInfo = kingSafetyInfo(oppMoveList);
         HashSet<Byte> invalidSquares = new HashSet<>(64);
+        ArrayList<ChessPiece> checkingPieces = new ArrayList<>(2);
         
         for (OppPieceInfo piece: oppPieceInfo) {
             invalidSquares.addAll(piece.hazardSquares);
+            if (piece.isChecking) {
+                checkingPieces.add(piece.oppPiece);
+            }
         }
         
         for (Move m: possibleMoves) {
+            byte isBlack = m.color == Color.WHITE ? 0 : BOARD_END_INDEX;
             if (m.isKingsideCastle) {
-
+                if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[0] + isBlack)) 
+                    || invalidSquares.contains((byte)(WK_CASTLING_SQUARES[1] + isBlack))) {
+                    continue;
+                }
             }
             else if (m.isQueensideCastle) {
-
+                if (!checkingPieces.isEmpty() || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[0] + isBlack)) 
+                    || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[1] + isBlack))
+                    || invalidSquares.contains((byte)(WQ_CASTLING_SQUARES[2] + isBlack))) {
+                    continue;
+                }
             }
             else {
                 if (m.currentPiece.id == PieceID.KING && invalidSquares.contains(m.endSquare))
@@ -288,14 +306,14 @@ class Position {
     public void addCastlingMoves(Color side, List<Move> moveList) {
         ChessPiece king, kRook, qRook;
         if (side == Color.WHITE) {
-            king = b.getPieceFromSquare(WHITE_KING_SQUARE);
-            kRook = b.getPieceFromSquare(WHITE_K_ROOK_SQUARE);
-            qRook = b.getPieceFromSquare(WHITE_Q_ROOK_SQUARE);
+            king = b.getPieceFromSquare(WK_SQUARE);
+            kRook = b.getPieceFromSquare(WK_ROOK_SQUARE);
+            qRook = b.getPieceFromSquare(WQ_ROOK_SQUARE);
         }
         else {
-            king = b.getPieceFromSquare(BLACK_KING_SQUARE);
-            kRook = b.getPieceFromSquare(BLACK_K_ROOK_SQUARE);
-            qRook = b.getPieceFromSquare(BLACK_Q_ROOK_SQUARE);
+            king = b.getPieceFromSquare(BK_SQUARE);
+            kRook = b.getPieceFromSquare(BK_ROOK_SQUARE);
+            qRook = b.getPieceFromSquare(BQ_ROOK_SQUARE);
         }
         if (king == null)
             return;
