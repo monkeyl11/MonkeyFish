@@ -32,6 +32,7 @@ public class Stopwatch
 	public double time()
 	{	return totalTime / NANOS_PER_SEC;	}
 
+	@Override
 	public String toString(){
 	    return "elapsed time: " + time() + " seconds.";
 	}

@@ -190,6 +190,7 @@ class Board {
         return true;
     }
 
+    @Override
     public String toString() {
         return BoardMethods.boardToString(this);
     }

@@ -6,7 +6,6 @@ class OppPieceInfo {
     public ChessPiece oppPiece; //opponent piece causing all this sh*t
 
     public ChessPiece pinnedPiece; //piece that is pinned to the king
-    public int[] pinDirection; //direction of the piece pinned to the king
 
     public static HashSet<Byte> hazardSquares; //squares this side targets
 
@@ -18,7 +17,6 @@ class OppPieceInfo {
         this.oppPiece = oppPiece;
         this.isChecking = false;
         this.pinnedPiece = null;
-        this.pinDirection = null;
         this.enPassantHazard = null;
     }
 
@@ -27,13 +25,12 @@ class OppPieceInfo {
         king = k;
     }
 
-    public void addPinnedPiece(ChessPiece pinnedPiece, int fileDirection, int rankDirection) {
+    public void addPinnedPiece(ChessPiece pinnedPiece) {
         this.pinnedPiece = pinnedPiece;
-        this.pinDirection = new int[]{fileDirection, rankDirection};
     }
 
     public void addHazardSquare(byte square) {
-        this.hazardSquares.add(square);
+        hazardSquares.add(square);
     }
 
     public void setEnPassantHazard(Pawn p) {

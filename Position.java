@@ -34,19 +34,21 @@ class Position {
     public Color activeColor;
     private HashSet<ChessPiece> whitePieces;
     private HashSet<ChessPiece> blackPieces;
+    public PositionStatus positionStatus;
     int[][] castlingRights; //0 for castling allowed, >0 = no castling, {{WK, WQ},{BK, BQ}}
     private Stack<Pawn> enPassantHistory; //for undoing moves
     private Stack<Integer> halfMoveHistory; //keeping track of halfmove counts
 
     private Stack<Move> prevMoves;
+    
 
     public static int numTimesLMCalled = 0;
 
 
     //private HashMap<Position, Integer> prevPositions; //tracking three-fold
     private int turn; //track 50-move rule (100 turn), also en passant
-
     private int halfmoveClock = 0;
+    private boolean gameOver = false;
 
     public Position(Board b, Color activeColor, boolean autoSetBoard, int turn, int[][] castlingRights) {
         if (b.equals(new Board()) && autoSetBoard) {
@@ -55,6 +57,8 @@ class Position {
         this.b = b;
         this.activeColor = activeColor;
         this.turn = turn;
+        this.positionStatus = new PositionStatus();
+        positionStatus.turn = activeColor;
         this.castlingRights = castlingRights;
         this.prevMoves = new Stack<>();
         this.enPassantHistory = new Stack<>();
@@ -116,9 +120,19 @@ class Position {
         else {
             throw new IllegalArgumentException("FEN Error: Active Color, invalid color");
         }
+        this.positionStatus = new PositionStatus();
+        positionStatus.turn = this.activeColor;
 
         //Field 3: Castling Rights
         castlingRights = new int[][]{{1, 1}, {1, 1}};
+        ChessPiece kR = b.getPieceFromSquare((byte)0b00111000);
+        if (kR != null && kR instanceof Rook) {
+            ((Rook)kR).assignKingsideRook();
+        }
+        kR = b.getPieceFromSquare((byte)0b00111111);
+        if (kR != null && kR instanceof Rook) {
+            ((Rook)kR).assignKingsideRook();
+        }
         for (char s: fields[2].toCharArray()) {
             if (s == '-') {
                 //Nobody castles
@@ -130,10 +144,7 @@ class Position {
             else if (s == 'K') {
                 castlingRights[0][0] = 0;
                 ChessPiece p = b.getPieceFromSquare((byte)0b00111000);
-                if (p != null && p instanceof Rook) {
-                    ((Rook)p).assignKingsideRook();
-                }
-                else {
+                if (p == null || !(p instanceof Rook)) {
                     throw new IllegalArgumentException("FEN Error: Castling Rights, Kingside White");
                 }
             }
@@ -143,10 +154,7 @@ class Position {
             else if (s == 'k') {
                 castlingRights[1][0] = 0;
                 ChessPiece p = b.getPieceFromSquare((byte)0b00111111);
-                if (p != null && p instanceof Rook) {
-                    ((Rook)p).assignKingsideRook();
-                }
-                else {
+                if (p == null || !(p instanceof Rook)) {
                     throw new IllegalArgumentException("FEN Error: Castling Rights, Kingside Black");
                 }
             }
@@ -264,7 +272,7 @@ class Position {
         HashSet<Byte> invalidSquares = OppPieceInfo.hazardSquares;
         ArrayList<ChessPiece> checkingPieces = new ArrayList<>(2);
         ArrayList<ChessPiece> pinnedPieces = new ArrayList<>(4);
-        ArrayList<int[]> pinnedPieceDirections = new ArrayList<>(4);
+        ArrayList<ChessPiece> pinners = new ArrayList<>(4);
         
         Pawn enPassantHazard = null;
         ChessPiece EPCheckingPiece = null;
@@ -274,7 +282,7 @@ class Position {
             }
             if (piece.pinnedPiece != null) {
                 pinnedPieces.add(piece.pinnedPiece);
-                pinnedPieceDirections.add(piece.pinDirection);
+                pinners.add(piece.oppPiece);
             }
             if (piece.enPassantHazard != null) {
                 enPassantHazard = piece.enPassantHazard;
@@ -283,6 +291,7 @@ class Position {
         }
         int pinnedPieceIndex;
         PieceID currentPieceID;
+        byte kingSquare = getKing().currentSquare;
         for (Move m: possibleMoves) {
             currentPieceID = m.currentPiece.id;
             byte isBlack = m.color == Color.WHITE ? 0 : BOARD_END_INDEX;
@@ -305,16 +314,23 @@ class Position {
                             continue;
                         }
                         else {
-                            byte kingSquare = getKing().currentSquare;
-                            int checkerToBlockerDir = getDirection(
-                                (checkingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
-                                (checkingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
-                            int blockerToKingDir = getDirection(
-                                (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
-                                (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
-                            if (checkerToBlockerDir != blockerToKingDir) {
+                            if (!collinear(checkingPiece.currentSquare, m.endSquare, kingSquare)) {
                                 continue;
                             }
+                            else {
+                                //System.out.println(BoardMethods.squareToString(checkingPiece.currentSquare));
+                                //System.out.println(BoardMethods.squareToString(m.endSquare));
+                                //System.out.println(BoardMethods.squareToString(kingSquare));
+                            }
+                            // int checkerToBlockerDir = getDirection(
+                            //     (checkingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
+                            //     (checkingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
+                            // int blockerToKingDir = getDirection(
+                            //     (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
+                            //     (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
+                            // if (checkerToBlockerDir != blockerToKingDir) {
+                            //     continue;
+                            // }
                         }
                         
                     }
@@ -343,16 +359,18 @@ class Position {
                         if (m.capturedPiece != null && m.capturedPiece.equals(enPassantHazard)
                             && (m.startSquare & bitmaskRank) == (m.capturedPiece.currentSquare & bitmaskRank)) {
                             //VERY RARE CASE TEST
-                            byte kingSquare = getKing().currentSquare;
-                            int checkerToBlockerDir = getDirection(
-                                (EPCheckingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
-                                (EPCheckingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
-                            int blockerToKingDir = getDirection(
-                                (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
-                                (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
-                            if (checkerToBlockerDir != blockerToKingDir) {
+                            if (!collinear(EPCheckingPiece.currentSquare, m.endSquare, kingSquare)) {
                                 continue;
                             }
+                            // int checkerToBlockerDir = getDirection(
+                            //     (EPCheckingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
+                            //     (EPCheckingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
+                            // int blockerToKingDir = getDirection(
+                            //     (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
+                            //     (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
+                            // if (checkerToBlockerDir != blockerToKingDir) {
+                            //     continue;
+                            // }
                         }
                     }
                     pinnedPieceIndex = pinnedPieces.indexOf(m.currentPiece);
@@ -361,21 +379,59 @@ class Position {
                             continue;
                         }
                         else {
-                            int pieceFileDir = (m.startSquare & bitmaskFile) - (m.endSquare & bitmaskFile);
-                            int pieceRankDir = (m.startSquare & bitmaskRank) - (m.endSquare & bitmaskRank);
-                            int correctDir = getDirection(pinnedPieceDirections.get(pinnedPieceIndex)[0], 
-                                                           pinnedPieceDirections.get(pinnedPieceIndex)[1]);
-                            if (Math.abs(correctDir) != Math.abs(getDirection(pieceFileDir, pieceRankDir))) {
-                                continue;
+                            ChessPiece pinner = pinners.get(pinnedPieceIndex);
+                            if (!collinear(pinner.currentSquare, m.endSquare, kingSquare)) {
+                                if (m.capturedPiece != null) {
+                                    if (!m.capturedPiece.equals(pinner)) {
+                                        continue;
+                                    }
+                                }
+                                else {
+                                    continue;
+                                }
                             }
+                            // int pieceFileDir = (m.startSquare & bitmaskFile) - (m.endSquare & bitmaskFile);
+                            // int pieceRankDir = (m.startSquare & bitmaskRank) - (m.endSquare & bitmaskRank);
+                            // int correctDir = getDirection(pinnedPieceDirections.get(pinnedPieceIndex)[0], 
+                            //                                pinnedPieceDirections.get(pinnedPieceIndex)[1]);
+                            // if (Math.abs(correctDir) != Math.abs(getDirection(pieceFileDir, pieceRankDir))) {
+                            //     continue;
+                            // }
                         }
                     }
                 }
             }
             moveList.add(m);
         }
+        //checkmate or stalemate
+        if (moveList.isEmpty()) {
+            if (checkingPieces.size() > 0) {
+                positionStatus.status = PositionStatus.Status.CHECKMATE;
+            }
+            else {
+                positionStatus.status = PositionStatus.Status.STALEMATE;
+            }
+            gameOver = true;
+        }
+        else {
+            positionStatus.status = PositionStatus.Status.ONGOING;
+        }
 
         return moveList;
+    }
+
+    private boolean collinear(byte aByte, byte bByte, byte cByte) {
+        double[] a = {(aByte & bitmaskFile) >> 3, aByte & bitmaskRank};
+        double[] b = {(bByte & bitmaskFile) >> 3, bByte & bitmaskRank};
+        double[] c = {(cByte & bitmaskFile) >> 3, cByte & bitmaskRank};
+        double acDist = (a[0] - c[0]) * (a[0] - c[0]) + (a[1] - c[1]) * (a[1] - c[1]);
+        //System.out.println((c[1] - b[1])/(c[0] - b[0]) == (c[1] - c[1])/(a[0] - a[0]));
+        //System.out.println("abdist " + ((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1])));
+        //System.out.println("bcdist " + ((c[0] - b[0]) * (c[0] - b[0]) + (c[1] - b[1]) * (c[1] - b[1])));
+
+        return Math.abs((b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1])) < 0.001
+         && (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) < acDist
+         && (c[0] - b[0]) * (c[0] - b[0]) + (c[1] - b[1]) * (c[1] - b[1]) < acDist;
     }
 
     private int getDirection(int fileDiff, int rankDiff) {
@@ -441,7 +497,10 @@ class Position {
         }
     }
 
-    public void makeMove(Move m) {
+    private void makeMove(Move m) {
+        if (gameOver) {
+            throw new IllegalArgumentException("Move cannot be made when game has ended");
+        }
         boolean resetHMClock = false;
         b.makeMove(m);
         //Set opposing pawns' en passant variable to false
@@ -516,6 +575,7 @@ class Position {
         prevMoves.add(m);
         turn++;
         activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
+        positionStatus.nextMove();
     }
 
     public boolean makeMove(String s) {
@@ -606,6 +666,7 @@ class Position {
         else {
             halfmoveClock--;
         }
+        positionStatus.prevMove();
     }
 
     public Move algebraicNotationToMove(String s) {
@@ -766,6 +827,48 @@ class Position {
         }
     }
 
+    private void checkBasicDraws() {
+        //TO DO: THREEFOLD REPETITION
+        //FIFTY MOVE RULE
+        if (halfmoveClock == 50) {
+            positionStatus.status = PositionStatus.Status.FIFTY_MOVE;
+            gameOver = true;
+        }
+        //INSUFFICIENT MATERIAL, does not include 2-bishop of same color draw
+        else if (blackPieces.size() + whitePieces.size() == 3) {
+            for (ChessPiece p: blackPieces) {
+                if (p.id == PieceID.BISHOP || p.id == PieceID.KNIGHT) {
+                    positionStatus.status = PositionStatus.Status.INSUFFICIENT_MATERIAL;
+                    gameOver = true;
+                }
+            }
+            for (ChessPiece p: whitePieces) {
+                if (p.id == PieceID.BISHOP || p.id == PieceID.KNIGHT) {
+                    positionStatus.status = PositionStatus.Status.INSUFFICIENT_MATERIAL;
+                    gameOver = true;
+                }
+            }
+        }
+    }
+
+    //returns true if game over
+    public boolean positionStatus() {
+        checkBasicDraws();
+        if (gameOver) {
+            return true;
+        }
+        if (positionStatus.status == PositionStatus.Status.UNKNOWN) {
+            throw new IllegalArgumentException("Cannot call function without first calling legalMoves()");
+        }
+        else if (positionStatus.status == PositionStatus.Status.ONGOING) {
+            return false;
+        }
+        else {
+            //game over, details of the position status are set at the end of legalMoves()
+            return true;
+        }
+    }
+
     public PieceID identifyPiece(char c) {
         if (c == 'P'){
             return PieceID.PAWN;
@@ -919,7 +1022,72 @@ class Position {
                 && p.legalMoves().equals(this.legalMoves());
     }
 
+    @Override
     public String toString() {
-        return b.toString() + "\n--" + this.activeColor + " to move--\n";
+        return b + "\n--" + this.activeColor + " to move--\n";
     }
+
+
+    class PositionStatus{
+        public Color turn;
+        public Status status;
+    
+        public PositionStatus() {
+            status = Status.UNKNOWN;
+        }
+    
+        public void nextMove() {
+            turn = turn == Color.WHITE ? Color.BLACK : Color.WHITE;
+            status = Status.UNKNOWN;
+        }
+    
+        public void prevMove() {
+            turn = turn == Color.WHITE ? Color.BLACK : Color.WHITE;
+            status = Status.ONGOING;
+        }
+    
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof Move)) {
+                return false;
+            }
+            PositionStatus p = (PositionStatus)o;
+            return p.status == this.status && p.turn == this.turn;
+        }
+
+        @Override
+        public String toString() {
+            if (status == Status.STALEMATE)
+                return this.turn + " " + "STALEMATED";
+            else if (status == Status.CHECKMATE)
+                return this.turn + " " + "CHECKMATED";
+            else {
+                if (status == Status.UNKNOWN || status == Status.ONGOING) {
+                    return status.toString();
+                }
+                else {
+                    return "DRAWN BY " + status.toString();
+                }
+            }
+        }
+    
+        public enum Status {
+            UNKNOWN,
+            ONGOING,
+            STALEMATE,
+            INSUFFICIENT_MATERIAL,
+            FIFTY_MOVE,
+            REPETITION,
+            //AGREEMENT,
+            CHECKMATE,
+            //RESIGN,
+            //TIMEOUT
+        }
+    }
+    
+    
+    
 }
