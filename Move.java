@@ -78,6 +78,7 @@ class Move {
         return (color == Color.WHITE ? 1 : -1) * (endSquare * 100 + startSquare) * currentPiece.id.ordinal();
     }
 
+    @Override
     public String toString() {
         if (isKingsideCastle) {
             return "O-O";

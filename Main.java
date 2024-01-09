@@ -22,21 +22,20 @@ class Main {
             System.out.println(e);
         }
 
-        //runPlayerGames("./testcase_games/Paehtz.pgn", false, -1);
-        testAll();
-
-        
-
-
+        testFENs();
+        //runPlayerGames("./testcase_games/TorreRepetto.pgn", false, -1);
+        //testAll();
         //testUndo(-1);
         //testAllUndo();
+        
     }
 
     public static void testCase(String fen, String move) {
         Position p = new Position(fen);
         //p.makeMove(move);
-        p.legalMoves();
-        System.out.println(p);
+        System.out.println(p.legalMoves());
+        p.makeMove(move);
+        System.out.println("Position: \n" + p);
 
     }
 
@@ -46,10 +45,13 @@ class Main {
             System.out.println("Enter FEN: ");
             Position p = new Position(s.nextLine());
             System.out.println(p.legalMoves());
-            System.out.println(p);
+            if (p.positionStatus()) {
+                System.out.println(p.positionStatus);
+            }
         }
     }
 
+    //Courtesy of https://github.com/schnitzi
     public static void testSpecialPositions() throws Exception{
         boolean passedAll = true;
         File[] files = new File("./testcase_positions").listFiles();
@@ -63,9 +65,13 @@ class Main {
                 Position p = new Position((String)(startingInfo.get("fen")));
                 List<Move> generatedMoves = p.legalMoves();
                 List<Move> expectedMoves = new ArrayList<>(64);
+                List<String> expectedMovesAlgebraic = new ArrayList<>();
+                List<String> expectedFENs = new ArrayList<>(256);
                 ArrayList<JSONObject> moves = (ArrayList<JSONObject>)testcase.get("expected");
                 for (JSONObject m: moves) {
+                    expectedMovesAlgebraic.add((String)(m.get("move")));
                     expectedMoves.add(p.algebraicNotationToMove((String)(m.get("move"))));
+                    expectedFENs.add((String)(m.get("fen")));
                 }
                 boolean testcasePassed = true;
                 for (Move m: generatedMoves) {
@@ -84,6 +90,21 @@ class Main {
                 }
                 if (!testcasePassed) {
                     System.out.println("TESTCASE FAILED- " + startingInfo.get("fen"));
+                }
+                //Testing FEN generation
+                if (testcasePassed) {
+                    for (int i = 0; i < expectedMoves.size(); i++) {
+                        p.makeMove(expectedMovesAlgebraic.get(i));
+                        if (!(p.toFEN().equals(expectedFENs.get(i)))) {
+                            System.out.println(p);
+                            System.out.println("Incorrect: " + Arrays.toString(p.toFEN().toCharArray()));
+                            System.out.println("Expected:  " + Arrays.toString(expectedFENs.get(i).toCharArray()));
+                            System.out.println("Original FEN: " + startingInfo.get("fen"));
+                            System.out.println("Move: " + expectedMovesAlgebraic.get(i));
+                            throw new IllegalArgumentException();
+                        }
+                        p.undoMove();
+                    }
                 }
             }
 

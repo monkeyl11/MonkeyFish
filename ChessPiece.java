@@ -67,7 +67,7 @@ abstract class ChessPiece {
                     else if (stopNum == 1) {
                         if (p.id == PieceID.KING) {
                             if (potentialPinnedPiece != null) {
-                                pieceInfo.addPinnedPiece(potentialPinnedPiece, fileIncrement, rankIncrement);
+                                pieceInfo.addPinnedPiece(potentialPinnedPiece);
                             }
                             else if (potentialEPHazard != null) {
                                 pieceInfo.setEnPassantHazard(potentialEPHazard);
@@ -170,6 +170,7 @@ abstract class ChessPiece {
     }
 
     //Mostly for debugging
+    @Override
     public String toString() {
         return pieceColor + " " + id + "-" + BoardMethods.squareToString(currentSquare);
         //return "" + specialID; //Used for debugging sets
