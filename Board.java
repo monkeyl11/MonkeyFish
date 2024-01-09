@@ -19,6 +19,7 @@ class Board {
         board[6][0] = new Knight((byte)48, Color.WHITE);
         board[7][0] = new Rook((byte)56, Color.WHITE);
         ((Rook)board[7][0]).assignKingsideRook();
+        ((Rook)board[0][0]).assignQueensideRook();
 
         board[0][7] = new Rook((byte)7, Color.BLACK);
         board[1][7] = new Knight((byte)15, Color.BLACK);
@@ -29,6 +30,7 @@ class Board {
         board[6][7] = new Knight((byte)55, Color.BLACK);
         board[7][7] = new Rook((byte)63, Color.BLACK);
         ((Rook)board[7][7]).assignKingsideRook();
+        ((Rook)board[0][7]).assignQueensideRook();
 
 
         for (int i = 0; i < 8; i++) {

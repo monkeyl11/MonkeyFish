@@ -56,8 +56,24 @@ abstract class ChessPiece {
                                 stopNum++;
                             }
                             else {
-                                System.out.println("Illegal Position! - " + b);
+                                System.out.println("Illegal Position! - \n" + b);
                             }
+                        }
+                        else if (pieceInfo != null && p.id == PieceID.PAWN) {
+                            if (rankIncrement == 0 && withinBoard(file + fileIncrement, rank)) {
+                                ChessPiece adjPiece = b.getPieceFromSquare((byte)(((file + fileIncrement) << 3) + rank));
+                                if (adjPiece != null && adjPiece.id == PieceID.PAWN 
+                                    && adjPiece.pieceColor != p.pieceColor && ((Pawn)adjPiece).canEnPassant()) {
+                                    file += fileIncrement;
+                                    potentialEPHazard = (Pawn)adjPiece;
+                                }
+                                else {
+                                    potentialPinnedPiece = p;
+                                }
+                            } 
+                            else {
+                                potentialPinnedPiece = p;
+                            }                          
                         }
                         else {
                             potentialPinnedPiece = p;

@@ -2,11 +2,13 @@ import java.util.*;
 
 class Rook extends ChessPiece {
     public boolean kingsideRook;
+    public boolean queensideRook;
 
     public Rook(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
         super(5, currentSquare, pieceColor);
         this.kingsideRook = false;
+        this.queensideRook = false;
         this.id = PieceID.ROOK;
     }
 
@@ -20,6 +22,10 @@ class Rook extends ChessPiece {
 
     public void assignKingsideRook() {
         kingsideRook = true;
+    }
+
+    public void assignQueensideRook() {
+        queensideRook = true;
     }
 
 }

@@ -18,7 +18,7 @@ class Knight extends ChessPiece {
             if (withinBoard(pieceFile + possibleMove[0], pieceRank + possibleMove[1])) {
                 byte targetSquare = (byte)(((pieceFile + possibleMove[0]) << 3) + (pieceRank + possibleMove[1]));
                 ChessPiece capturedPiece = b.getPieceFromSquare(targetSquare);
-                if (capturedPiece == null || capturedPiece.pieceColor != this.pieceColor) {
+                if (capturedPiece == null) {
                     moveList.add(new Move(this, capturedPiece, targetSquare, this.pieceColor));
                 }
                 else if (capturedPiece.pieceColor != this.pieceColor) {

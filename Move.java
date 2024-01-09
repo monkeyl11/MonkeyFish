@@ -78,6 +78,12 @@ class Move {
         return (color == Color.WHITE ? 1 : -1) * (endSquare * 100 + startSquare) * currentPiece.id.ordinal();
     }
 
+
+    //Output moves the way stockfish does
+    public String toStringSF() {
+        return BoardMethods.squareToString(startSquare) + "" + BoardMethods.squareToString(endSquare);
+    }
+
     @Override
     public String toString() {
         if (isKingsideCastle) {

@@ -6,8 +6,7 @@ import java.io.FileReader;
 
 import org.json.simple.JSONArray; 
 import org.json.simple.JSONObject; 
-import org.json.simple.parser.*; 
-
+import org.json.simple.parser.*;
 
 class Main {
     private static Stopwatch stopwatch = new Stopwatch();
@@ -21,8 +20,13 @@ class Main {
         catch (Exception e) {
             System.out.println(e);
         }
-
-        testFENs();
+        //perft(6, "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
+        // Position p = new Position("8/2p5/3p4/KP5r/1R3pPk/8/4P3/8 b - g3 0 1");
+        // for (Move m : p.legalMoves()) {
+        //     System.out.println(m.toString());
+        // }
+        //testCase("rnbqkb1r/pppppppp/8/8/4n3/3P4/PPPKPPPP/RNBQ1BNR w kq - 0 1", "a3");
+        //testFENs();
         //runPlayerGames("./testcase_games/TorreRepetto.pgn", false, -1);
         //testAll();
         //testUndo(-1);
@@ -48,6 +52,57 @@ class Main {
             if (p.positionStatus()) {
                 System.out.println(p.positionStatus);
             }
+        }
+    }
+
+    //perft
+    public static void perft(int depth, String fen) {
+        stopwatch.reset();
+        stopwatch.start();
+        long[] stats = {0, 0, 0}; //total positions, checkmates found
+        long[] prevStats = {0, 0, 0};
+        Position p = new Position(fen);
+        List<Move> moves = p.legalMoves();
+        //System.out.println("mlL " + moves.size());
+        for (Move m: moves) {
+            p.makeMove(m);
+            testTreeHelper(p, depth - 2, stats);
+            p.undoMove();
+            System.out.println("MOVE " + m.toStringSF());
+            System.out.println("Leaf nodes generated: " + (stats[0] - prevStats[0]));
+            System.out.println("Checkmates seen: " + (stats[1] - prevStats[1]));
+            System.out.println("Checks seen: " + (stats[2] - prevStats[2]));
+            prevStats = Arrays.copyOf(stats, stats.length);
+        }
+        stopwatch.stop();
+        System.out.println("---TOTAL STATS---");
+        System.out.println("Leaf nodes generated: " + stats[0]);
+        System.out.println("Checkmates seen: " + stats[1]);
+        System.out.println("Checks seen: " + stats[2]);
+        System.out.println("Total time taken to search " + fen + " with depth " + depth + ": " + stopwatch.time());
+    }
+
+    private static void testTreeHelper(Position p, int depth, long[] stats) {
+        List<Move> legalMoves = p.legalMoves();
+        if (depth == 0)
+            stats[0] += legalMoves.size();
+        if (p.positionStatus() || depth <= 0) {
+            if (p.isCheckmate())
+                stats[1]++;
+            if (p.inCheck())
+                stats[2]++;
+            return;
+        }
+        for (Move m: legalMoves) {
+            try {
+                p.makeMove(m);
+            }
+            catch (Exception e) {
+                System.out.println(p);
+                throw e;
+            }
+            testTreeHelper(p, depth - 1, stats);
+            p.undoMove();
         }
     }
 

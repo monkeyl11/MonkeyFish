@@ -35,7 +35,7 @@ class Position {
     private HashSet<ChessPiece> whitePieces;
     private HashSet<ChessPiece> blackPieces;
     public PositionStatus positionStatus;
-    int[][] castlingRights; //0 for castling allowed, >0 = no castling, {{WK, WQ},{BK, BQ}}
+    private int[][] castlingRights; //0 for castling allowed, >0 = no castling, {{WK, WQ},{BK, BQ}}
     private Stack<Pawn> enPassantHistory; //for undoing moves
     private Stack<Integer> halfMoveHistory; //keeping track of halfmove counts
 
@@ -126,12 +126,20 @@ class Position {
         //Field 3: Castling Rights
         castlingRights = new int[][]{{1, 1}, {1, 1}};
         ChessPiece kR = b.getPieceFromSquare((byte)0b00111000);
-        if (kR != null && kR instanceof Rook) {
+        if (kR != null && kR instanceof Rook && kR.pieceColor == Color.WHITE) {
             ((Rook)kR).assignKingsideRook();
         }
         kR = b.getPieceFromSquare((byte)0b00111111);
-        if (kR != null && kR instanceof Rook) {
+        if (kR != null && kR instanceof Rook && kR.pieceColor == Color.BLACK) {
             ((Rook)kR).assignKingsideRook();
+        }
+        ChessPiece qR = b.getPieceFromSquare((byte)0b00000000);
+        if (qR != null && qR instanceof Rook && qR.pieceColor == Color.WHITE) {
+            ((Rook)qR).assignQueensideRook();
+        }
+        qR = b.getPieceFromSquare((byte)0b00000111);
+        if (qR != null && qR instanceof Rook && qR.pieceColor == Color.BLACK) {
+            ((Rook)qR).assignQueensideRook();
         }
         for (char s: fields[2].toCharArray()) {
             if (s == '-') {
@@ -140,6 +148,10 @@ class Position {
             }
             else if (s == 'Q') {
                 castlingRights[0][1] = 0;
+                ChessPiece p = b.getPieceFromSquare((byte)0b00000000);
+                if (p == null || !(p instanceof Rook)) {
+                    throw new IllegalArgumentException("FEN Error: Castling Rights, Queenside White");
+                }
             }
             else if (s == 'K') {
                 castlingRights[0][0] = 0;
@@ -150,6 +162,10 @@ class Position {
             }
             else if (s == 'q') {
                 castlingRights[1][1] = 0;
+                ChessPiece p = b.getPieceFromSquare((byte)0b00000111);
+                if (p == null || !(p instanceof Rook)) {
+                    throw new IllegalArgumentException("FEN Error: Castling Rights, Queenside White");
+                }
             }
             else if (s == 'k') {
                 castlingRights[1][0] = 0;
@@ -292,6 +308,9 @@ class Position {
         int pinnedPieceIndex;
         PieceID currentPieceID;
         byte kingSquare = getKing().currentSquare;
+        if (!checkingPieces.isEmpty()) {
+            positionStatus.inCheck = true;
+        }
         for (Move m: possibleMoves) {
             currentPieceID = m.currentPiece.id;
             byte isBlack = m.color == Color.WHITE ? 0 : BOARD_END_INDEX;
@@ -317,20 +336,6 @@ class Position {
                             if (!collinear(checkingPiece.currentSquare, m.endSquare, kingSquare)) {
                                 continue;
                             }
-                            else {
-                                //System.out.println(BoardMethods.squareToString(checkingPiece.currentSquare));
-                                //System.out.println(BoardMethods.squareToString(m.endSquare));
-                                //System.out.println(BoardMethods.squareToString(kingSquare));
-                            }
-                            // int checkerToBlockerDir = getDirection(
-                            //     (checkingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
-                            //     (checkingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
-                            // int blockerToKingDir = getDirection(
-                            //     (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
-                            //     (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
-                            // if (checkerToBlockerDir != blockerToKingDir) {
-                            //     continue;
-                            // }
                         }
                         
                     }
@@ -497,7 +502,7 @@ class Position {
         }
     }
 
-    private void makeMove(Move m) {
+    public void makeMove(Move m) {
         if (gameOver) {
             throw new IllegalArgumentException("Move cannot be made when game has ended");
         }
@@ -524,7 +529,7 @@ class Position {
                 if (((Rook)m.capturedPiece).kingsideRook) {
                     castlingRights[crIndex][0]++;
                 }
-                else {
+                else if (((Rook)m.capturedPiece).queensideRook){
                     castlingRights[crIndex][1]++;
                 }
             }
@@ -564,7 +569,7 @@ class Position {
                 if (((Rook)m.currentPiece).kingsideRook) {
                     castlingRights[crIndex][0]++;
                 }
-                else {
+                else if (((Rook)m.currentPiece).queensideRook){
                     castlingRights[crIndex][1]++;
                 }
             }
@@ -623,7 +628,7 @@ class Position {
                 if (((Rook)m.capturedPiece).kingsideRook) {
                     castlingRights[crIndex][0]--;
                 }
-                else {
+                else if (((Rook)m.capturedPiece).queensideRook){
                     castlingRights[crIndex][1]--;
                 }
             }
@@ -652,7 +657,7 @@ class Position {
                 if (((Rook)m.currentPiece).kingsideRook) {
                     castlingRights[crIndex][0]--;
                 }
-                else {
+                else if (((Rook)m.currentPiece).queensideRook){
                     castlingRights[crIndex][1]--;
                 }
             }
@@ -667,6 +672,7 @@ class Position {
             halfmoveClock--;
         }
         positionStatus.prevMove();
+        gameOver = false;
     }
 
     public Move algebraicNotationToMove(String s) {
@@ -869,6 +875,21 @@ class Position {
         }
     }
 
+    //mainly for debugging
+    public boolean inCheck() {
+        if (positionStatus.status == PositionStatus.Status.UNKNOWN) {
+            throw new IllegalArgumentException("Cannot run inCheck() without running legalMoves() first");
+        }
+        return positionStatus.inCheck();
+    }
+
+    public boolean isCheckmate() {
+        if (positionStatus.status == PositionStatus.Status.UNKNOWN) {
+            throw new IllegalArgumentException("Cannot run isCheckmate() without running legalMoves() first");
+        }
+        return positionStatus.status == PositionStatus.Status.CHECKMATE;
+    }
+
     public PieceID identifyPiece(char c) {
         if (c == 'P'){
             return PieceID.PAWN;
@@ -1031,6 +1052,7 @@ class Position {
     class PositionStatus{
         public Color turn;
         public Status status;
+        public boolean inCheck;
     
         public PositionStatus() {
             status = Status.UNKNOWN;
@@ -1039,11 +1061,17 @@ class Position {
         public void nextMove() {
             turn = turn == Color.WHITE ? Color.BLACK : Color.WHITE;
             status = Status.UNKNOWN;
+            inCheck = false;
         }
     
         public void prevMove() {
             turn = turn == Color.WHITE ? Color.BLACK : Color.WHITE;
             status = Status.ONGOING;
+            inCheck = false;
+        }
+
+        public boolean inCheck() {
+            return inCheck;
         }
     
         @Override
