@@ -47,7 +47,7 @@ abstract class ChessPiece {
                     if (stopNum == 0) {
                         if (p.id == PieceID.KING) {
                             if (pieceInfo != null) {
-                                pieceInfo.setChecking((King)p);
+                                pieceInfo.setChecking();
                                 //add hazard square for square beyond king
                                 if (pieceInfo != null && withinBoard(file + fileIncrement, rank + rankIncrement)) {
                                     pieceInfo.addHazardSquare((byte)(((file + fileIncrement) << 3) + (rank + rankIncrement)));

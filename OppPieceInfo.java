@@ -11,8 +11,6 @@ class OppPieceInfo {
 
     public Pawn enPassantHazard; //opponent pawn that could be en passant-ed and will reveal this piece to the King
 
-    public static King king; //The king (if targeted)
-
     public OppPieceInfo(ChessPiece oppPiece) {
         this.oppPiece = oppPiece;
         this.isChecking = false;
@@ -20,9 +18,8 @@ class OppPieceInfo {
         this.enPassantHazard = null;
     }
 
-    public void setChecking(King k) {
+    public void setChecking() {
         this.isChecking = true;
-        king = k;
     }
 
     public void addPinnedPiece(ChessPiece pinnedPiece) {
@@ -39,6 +36,5 @@ class OppPieceInfo {
 
     public static void reset() {
         hazardSquares = new HashSet<>(64);
-        king = null;
     }
 }

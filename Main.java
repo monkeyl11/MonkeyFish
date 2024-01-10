@@ -8,6 +8,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.*;
 
+
 class Main {
     private static Stopwatch stopwatch = new Stopwatch();
     private static int totalCasesFailed = 0;
@@ -27,8 +28,26 @@ class Main {
         //75s
         //perftTestShallow();
         //2524s
-        perftTestDeep();
-        
+        //perftTestDeep();
+        // stopwatch.start();
+        // Position p = new Position("1r2k1r1/1b1nb2p/pB1p1p2/1p2p3/8/B1Q5/PPP2PPP/R4RK1 w - - 2 20");
+        // Move[] bestMove = new Move[1];
+        // Node<String> root = new Node<String>();
+        // root.children = new ArrayList<>();
+        // stopwatch.start();
+        // double e = Evaluate.evaluatePosition(p);
+        // System.out.println("EVALUATION: " + Evaluate.evalNodeCount(p, 10000000.0, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove, 0, e, 0));
+        // stopwatch.stop();
+        // System.out.println("TOTAL TIME: " + stopwatch.time());
+        // System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
+        // System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
+        // System.out.println("TIME SPENT EVALUATING POSITIONS: " + Evaluate.s3.time());
+        // System.out.println("TOTAL LEAF NODES EVALUATED: " + Evaluate.total_nodes);
+        // System.out.println("MAX DEPTH SEARCHED: " + Evaluate.maxDepth);
+        // System.out.println(bestMove[0]);
+
+        playEngine(null, true);
+
         // Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - - 0 28");
         // p.makeMove("Kd5");
         // for (Move m : p.legalMoves()) {
@@ -42,6 +61,55 @@ class Main {
         //testUndo(-1);
         //testAllUndo();
         
+    }
+
+    public static void playEngine(String fen, boolean userIsWhite) {
+        Position p = null;
+        if (fen == null) {
+            p = new Position(true);
+        }
+        else {
+            p = new Position(fen);
+        }
+        boolean userTurn = userIsWhite;
+        Scanner input = new Scanner(System.in);
+        while(true) {
+            p.isDrawn();
+            List<Move> legalMoves = p.legalMoves();
+            if (p.positionStatus() != 0) {
+                break;
+            }
+            double baseLineEval = 10000.0;
+            if (userTurn) {
+                while (true) {
+                    System.out.print("Make move: ");
+                    String userResponse = input.nextLine();
+                    try {
+                        if (p.makeMove(userResponse)) {
+                            break;
+                        }
+                    }
+                    catch (Exception e){};
+                }
+                userTurn = false;
+            }
+            else {
+                Stopwatch s = new Stopwatch();
+                Move[] move = new Move[1];
+                double e = Evaluate.evaluatePosition(p);
+                double eval = 0;
+                while (s.time() < 2) {
+                    s.start();
+                    eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0);
+                    s.stop();
+                    baseLineEval *= 10;
+                }
+                System.out.println("Engine evaluation: " + eval);
+                System.out.println("Engine plays " + move[0]);
+                p.makeMove(move[0]);
+                userTurn = true;
+            }
+        }
     }
 
     public static void testCase(String fen, String move) {
@@ -59,7 +127,7 @@ class Main {
             System.out.println("Enter FEN: ");
             Position p = new Position(s.nextLine());
             System.out.println(p.legalMoves());
-            if (p.positionStatus()) {
+            if (p.positionStatus() != 0) {
                 System.out.println(p.positionStatus);
             }
         }
@@ -108,7 +176,7 @@ class Main {
         List<Move> legalMoves = p.legalMoves();
         if (depth == 0)
             stats[0] += legalMoves.size();
-        if (p.positionStatus() || depth <= 0) {
+        if (p.positionStatus() != 0 || depth <= 0) {
             if (p.isCheckmate())
                 stats[1]++;
             if (p.inCheck())

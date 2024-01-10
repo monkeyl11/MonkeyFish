@@ -13,6 +13,18 @@ class Move {
     public byte startSquare;
     public byte endSquare;
     
+    public Move(ChessPiece currentPiece, ChessPiece capturedPiece, 
+                byte endSquare, Color color, 
+                PieceID promotionPiece, boolean isCheck) {
+        this.color = color;
+        this.startSquare = currentPiece.currentSquare;
+        this.currentPiece = currentPiece;
+        this.endSquare = endSquare;
+        //Check if castling
+        this.promotionPiece = promotionPiece;
+        this.capturedPiece = capturedPiece;
+    }
+
     //Non-castling
     public Move(ChessPiece currentPiece, ChessPiece capturedPiece, 
                 byte endSquare, Color color, 

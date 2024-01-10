@@ -48,7 +48,7 @@ class Pawn extends ChessPiece {
                             ChessPiece capturedPiece = b.getPieceFromSquare(targetSquare);
                             if (capturedPiece.id == PieceID.KING) {
                                 if (pieceInfo != null)
-                                    pieceInfo.setChecking((King)capturedPiece);
+                                    pieceInfo.setChecking();
                                 else
                                     System.out.println("Illegal Position! - " + b);
                             }
@@ -99,7 +99,7 @@ class Pawn extends ChessPiece {
                             ChessPiece capturedPiece = b.getPieceFromSquare(targetSquare);
                             if (capturedPiece.id == PieceID.KING) {
                                 if (pieceInfo != null)
-                                    pieceInfo.setChecking((King)capturedPiece);
+                                    pieceInfo.setChecking();
                                 else
                                     System.out.println("Illegal Position! - " + b);
                             }

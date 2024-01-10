@@ -30,19 +30,17 @@ class Position {
     private static final byte bitmaskRank = 0b00000111;
     private static final byte bitmaskFile = 0b00111000;
 
+
     public Board b;
     public Color activeColor;
-    private HashSet<ChessPiece> whitePieces;
-    private HashSet<ChessPiece> blackPieces;
+    public HashSet<ChessPiece> whitePieces;
+    public HashSet<ChessPiece> blackPieces;
     public PositionStatus positionStatus;
     private int[][] castlingRights; //0 for castling allowed, >0 = no castling, {{WK, WQ},{BK, BQ}}
     private Stack<Pawn> enPassantHistory; //for undoing moves
     private Stack<Integer> halfMoveHistory; //keeping track of halfmove counts
 
     private Stack<Move> prevMoves;
-    
-
-    public static int numTimesLMCalled = 0;
 
 
     //private HashMap<Position, Integer> prevPositions; //tracking three-fold
@@ -253,7 +251,6 @@ class Position {
 
     //Takes care of castling and eliminates moves that put King in check
     public List<Move> legalMoves(Color side, boolean ignoreChecks) {
-
         ArrayList<Move> allMoves = new ArrayList<>(64);
         HashSet<ChessPiece> playerPieces = side == Color.WHITE ? whitePieces : blackPieces;
         for (ChessPiece p: playerPieces) {
@@ -261,7 +258,8 @@ class Position {
         }
         addCastlingMoves(side, allMoves);
         if (!ignoreChecks) {
-            return checkRemove(allMoves);
+            List<Move> m = checkRemove(allMoves);
+            return m;
             //do later, remove moves that put the King in check, then return a different list/set
             //return checkRemove(allMoves);
         }
@@ -844,21 +842,29 @@ class Position {
     }
 
     //returns true if game over
-    public boolean positionStatus() {
-        checkBasicDraws();
-        if (gameOver) {
-            return true;
-        }
+    public double positionStatus() {
         if (positionStatus.status == PositionStatus.Status.UNKNOWN) {
             throw new IllegalArgumentException("Cannot call function without first calling legalMoves()");
         }
         else if (positionStatus.status == PositionStatus.Status.ONGOING) {
-            return false;
+            return 0;
         }
+        else if (positionStatus.status == PositionStatus.Status.STALEMATE
+                || positionStatus.status == PositionStatus.Status.FIFTY_MOVE
+                || positionStatus.status == PositionStatus.Status.REPETITION) {
+                    return 0.5;
+                }
         else {
             //game over, details of the position status are set at the end of legalMoves()
-            return true;
+            return 1;
         }
+    }
+
+    public boolean isDrawn() {
+        checkBasicDraws();
+        if (gameOver)
+            return true;
+        return false;
     }
 
     //mainly for debugging
