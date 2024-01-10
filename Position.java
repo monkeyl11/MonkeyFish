@@ -196,10 +196,11 @@ class Position {
                 }
             }
             else if (BoardMethods.getRank(square) == EN_PASSANT_TARGET_RANK_W) {
-                //Black pawn target
+                //White pawn target
                 ChessPiece p = b.getPieceFromSquare((byte)(square + 1));
                 if ((p instanceof Pawn) && p.pieceColor == Color.WHITE) {
                     ((Pawn)p).setEnPassant(true);
+                    enPassantPawn = (Pawn)p;
                 }
                 else {
                     throw new IllegalArgumentException("FEN Error: En Passant Targets, Invalid E/P piece");
@@ -211,7 +212,7 @@ class Position {
         }
         
 
-        //Field 5: Halfmove Clock, Full move number
+        //Field 5: Halfmove Clock
         this.halfMoveHistory = new Stack<>();
         try {
             halfmoveClock = Integer.parseInt(fields[4]);
@@ -367,15 +368,6 @@ class Position {
                             if (!collinear(EPCheckingPiece.currentSquare, m.endSquare, kingSquare)) {
                                 continue;
                             }
-                            // int checkerToBlockerDir = getDirection(
-                            //     (EPCheckingPiece.currentSquare & bitmaskRank) - (m.endSquare & bitmaskRank),
-                            //     (EPCheckingPiece.currentSquare & bitmaskFile) - (m.endSquare & bitmaskFile));
-                            // int blockerToKingDir = getDirection(
-                            //     (m.endSquare & bitmaskRank) - (kingSquare & bitmaskRank),
-                            //     (m.endSquare & bitmaskFile) - (kingSquare & bitmaskFile));
-                            // if (checkerToBlockerDir != blockerToKingDir) {
-                            //     continue;
-                            // }
                         }
                     }
                     pinnedPieceIndex = pinnedPieces.indexOf(m.currentPiece);
@@ -395,13 +387,7 @@ class Position {
                                     continue;
                                 }
                             }
-                            // int pieceFileDir = (m.startSquare & bitmaskFile) - (m.endSquare & bitmaskFile);
-                            // int pieceRankDir = (m.startSquare & bitmaskRank) - (m.endSquare & bitmaskRank);
-                            // int correctDir = getDirection(pinnedPieceDirections.get(pinnedPieceIndex)[0], 
-                            //                                pinnedPieceDirections.get(pinnedPieceIndex)[1]);
-                            // if (Math.abs(correctDir) != Math.abs(getDirection(pieceFileDir, pieceRankDir))) {
-                            //     continue;
-                            // }
+
                         }
                     }
                 }

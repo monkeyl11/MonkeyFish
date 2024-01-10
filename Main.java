@@ -14,17 +14,27 @@ class Main {
     private static int totalCases = 0;
     
     public static void main(String[] args){
-        try {
-            testSpecialPositions();
-        }
-        catch (Exception e) {
-            System.out.println(e);
-        }
-        //perft(6, "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
-        // Position p = new Position("8/2p5/3p4/KP5r/1R3pPk/8/4P3/8 b - g3 0 1");
+        // try {
+        //     testSpecialPositions();
+        // }
+        // catch (Exception e) {
+        //     System.out.println(e);
+        // }
+        //Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - d3 0 28");
+        //perft(2, p, true);
+        //perft(6, "8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - d3 0 28", true);
+
+        //75s
+        //perftTestShallow();
+        //2524s
+        perftTestDeep();
+        
+        // Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - - 0 28");
+        // p.makeMove("Kd5");
         // for (Move m : p.legalMoves()) {
         //     System.out.println(m.toString());
         // }
+        //System.out.println("size: " + p.legalMoves().size());
         //testCase("rnbqkb1r/pppppppp/8/8/4n3/3P4/PPPKPPPP/RNBQ1BNR w kq - 0 1", "a3");
         //testFENs();
         //runPlayerGames("./testcase_games/TorreRepetto.pgn", false, -1);
@@ -55,31 +65,43 @@ class Main {
         }
     }
 
+    public static long perft(int depth, String fen, boolean debug) {
+        Position p = new Position(fen);
+        return perft(depth, p, debug);
+    }
+
     //perft
-    public static void perft(int depth, String fen) {
+    public static long perft(int depth, Position p, boolean debug) {
         stopwatch.reset();
         stopwatch.start();
         long[] stats = {0, 0, 0}; //total positions, checkmates found
         long[] prevStats = {0, 0, 0};
-        Position p = new Position(fen);
         List<Move> moves = p.legalMoves();
         //System.out.println("mlL " + moves.size());
         for (Move m: moves) {
             p.makeMove(m);
             testTreeHelper(p, depth - 2, stats);
             p.undoMove();
-            System.out.println("MOVE " + m.toStringSF());
-            System.out.println("Leaf nodes generated: " + (stats[0] - prevStats[0]));
-            System.out.println("Checkmates seen: " + (stats[1] - prevStats[1]));
-            System.out.println("Checks seen: " + (stats[2] - prevStats[2]));
+            if (debug) {
+                System.out.println("MOVE " + m.toStringSF());
+                System.out.println("Leaf nodes generated: " + (stats[0] - prevStats[0]));
+                //System.out.println("Checkmates seen: " + (stats[1] - prevStats[1]));
+                //System.out.println("Checks seen: " + (stats[2] - prevStats[2]));
+            }
+
             prevStats = Arrays.copyOf(stats, stats.length);
         }
         stopwatch.stop();
-        System.out.println("---TOTAL STATS---");
-        System.out.println("Leaf nodes generated: " + stats[0]);
-        System.out.println("Checkmates seen: " + stats[1]);
-        System.out.println("Checks seen: " + stats[2]);
-        System.out.println("Total time taken to search " + fen + " with depth " + depth + ": " + stopwatch.time());
+        if (debug) {
+            System.out.println("---TOTAL STATS---");
+            System.out.println("Legal moves from given position: " + moves.size());
+            System.out.println("Leaf nodes generated: " + stats[0]);
+            System.out.println("Checkmates seen: " + stats[1]);
+            System.out.println("Checks seen: " + stats[2]);
+            System.out.println("Total time taken to search " + p.toFEN() + " with depth " + depth + ": " + stopwatch.time());
+        }
+        
+        return stats[0];
     }
 
     private static void testTreeHelper(Position p, int depth, long[] stats) {
@@ -284,6 +306,50 @@ class Main {
             }
             i++;
         }
+    }
+
+    public static void perftTest(String fileName, String testcaseName){
+        boolean passedAll = true;
+        File f = new File(fileName);
+        Scanner scan;
+        long totalMovesExamined = 0;
+        try {
+            scan = new Scanner(f);
+        }
+        catch (FileNotFoundException e) {
+            System.out.println("Test case cannot be found");
+            return;
+        }
+        Stopwatch s = new Stopwatch();
+        s.start();
+        while(scan.hasNextLine()) {
+            String fen = scan.nextLine();
+            String[] params = scan.nextLine().split(" ");
+            long expectedVal = Long.parseLong(params[1]);
+            long actualVal = perft(Integer.parseInt(params[0]), fen, false);
+            if (actualVal != expectedVal) {
+                System.out.println("perft for " + fen + " failed at depth " + params[0]);
+                System.out.println("EXPECTED: " + expectedVal);
+                System.out.println("ACTUAL: " + actualVal);
+                passedAll = false;
+            }
+            totalMovesExamined += actualVal;
+        }
+        s.stop();
+        if (passedAll) {
+            System.out.println(testcaseName + " PASSED");
+            System.out.println("Total time taken: " + s.time());
+            System.out.println("Total moves examined: " + totalMovesExamined);
+        }
+        scan.close();
+    }
+
+    public static void perftTestDeep() {
+        perftTest("./testcase_perft/testcaseDeep", "PERFT DEEP");
+    }
+
+    public static void perftTestShallow() {
+        perftTest("./testcase_perft/testcaseShallow", "PERFT SHALLOW");
     }
 
     public static void resetCases() {

@@ -11,7 +11,7 @@ class Pawn extends ChessPiece {
     private final static int INITIAL_PAWN_STEP = 2;
     private boolean enPassant;
 
-    public int enPassantTurn = -1;
+    public int enPassantTurn = Integer.MIN_VALUE;
 
     public Pawn(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
