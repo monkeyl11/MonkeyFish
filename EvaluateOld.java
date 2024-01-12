@@ -1,6 +1,6 @@
 import java.util.*;
 
-class Evaluate {
+class EvaluateOld {
     private final static double WIN_EVAL = 10000.0;
     private final static double DRAWN_EVAL = 0;
 
@@ -23,7 +23,6 @@ class Evaluate {
 
 
     public static long total_nodes = 0;
-    public static long total_eval_calls = 0;
 
     public static Stopwatch s = new Stopwatch();
     public static Stopwatch s2 = new Stopwatch();
@@ -179,87 +178,18 @@ class Evaluate {
 
 
     public static double evalNodeCount(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, double prevEval, int numMoves) {
-        total_eval_calls++;
         maxDepth = Math.max(depth, maxDepth);
         if (p.isDrawn()) {
             return 0;
         }
         double posEval = evaluatePosition(p);
-        if (Math.abs(posEval - prevEval) <= 2) {
+        if (Math.abs(posEval - prevEval) <= 1) {
             if (nodeDepth <= 1) {
                 return posEval * (1 - DEPTH_FACTOR * depth);
             }
         }
-        else if (Math.abs(posEval - prevEval) >= 3){
-        }
-        if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
-            return posEval;
-        }
-        List<Move> legalMoves = p.legalMoves();
-        double posStatus = p.positionStatus();
-        if (posStatus == 0.5) { //Drawn by stalemate
-            return posStatus;
-        }
-        else if (posStatus == 1) { //Checkmate
-            return (p.activeColor == Color.WHITE ? -1 : 1) * (WIN_EVAL - DEPTH_FACTOR * depth); //checkmate
-        }
-        if (nodeDepth >= 30000) {
-            pos = p;
-            Collections.sort(legalMoves, new MoveComparatorShallow());
-            pos = null;
-        }
-        int moveCount = legalMoves.size();
-        if (p.activeColor == Color.WHITE) {
-            double maxEval = -Double.MAX_VALUE;
-            for (Move m: legalMoves) {
-                p.makeMove(m);
-                double eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount);
-                if (eval > maxEval) {
-                    maxEval = eval;
-                    if (bestMove != null) {
-                        bestMove[0] = m;
-                    }
-                }
-                alpha = Math.max(maxEval, alpha);
-                p.undoMove();
-                if (maxEval >= beta) {
-                    break;
-                }
-            }
-            return maxEval;
-        }
-        else {
-            double minEval = Double.MAX_VALUE;
-            for (Move m: legalMoves) {
-                p.makeMove(m);
-                double eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount);
-                if (eval < minEval) {
-                    minEval = eval;
-                    if (bestMove != null) {
-                        bestMove[0] = m;
-                    }
-                }
-                beta = Math.min(minEval, beta);
-                p.undoMove();
-                if (minEval <= alpha) {
-                    break;
-                }
-            }
-            return minEval;
-        }
-    }
-
-    public static double evalNodeCountDebug(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, double prevEval, int numMoves, Move move, Node<String> currNode) {
-        total_eval_calls++;
-        maxDepth = Math.max(depth, maxDepth);
-        if (p.isDrawn()) {
-            return 0;
-        }
-        double posEval = evaluatePosition(p);
-        if (Math.abs(posEval - prevEval) <= 2) {
-            if (nodeDepth <= 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
-                return posEval * (1 - DEPTH_FACTOR * depth);
-            }
+        else if (Math.abs(posEval - prevEval) >= 2){
+            nodeDepth *= numMoves;
         }
         // if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
         //     return posEval;
@@ -272,35 +202,23 @@ class Evaluate {
         else if (posStatus == 1) { //Checkmate
             return (p.activeColor == Color.WHITE ? -1 : 1) * (WIN_EVAL - DEPTH_FACTOR * depth); //checkmate
         }
-        if (nodeDepth >= 1000) {
+        if (nodeDepth >= 30000) {
             pos = p;
-            Collections.sort(legalMoves, new MoveComparatorShallow());
+            Collections.sort(legalMoves, new MoveComparator());
             pos = null;
-        }
-        else {
-            Collections.sort(legalMoves, new MoveComparatorDeep());
         }
         int moveCount = legalMoves.size();
         if (p.activeColor == Color.WHITE) {
             double maxEval = -Double.MAX_VALUE;
             for (Move m: legalMoves) {
                 p.makeMove(m);
-                currNode.children.add(new Node<String>());
-                Node<String> child = currNode.children.get(currNode.children.size() - 1);
-                child.children = new ArrayList<Node<String>>();
-                //if recapture
-                double eval;
-                if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
-                    eval = evalNodeCountDebug(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
-                else
-                    eval = evalNodeCountDebug(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
+                double eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount);
                 if (eval > maxEval) {
                     maxEval = eval;
                     if (bestMove != null) {
                         bestMove[0] = m;
                     }
                 }
-                child.data = m.toString() + " " + eval + " " + nodeDepth;
                 alpha = Math.max(maxEval, alpha);
                 p.undoMove();
                 if (maxEval >= beta) {
@@ -313,21 +231,13 @@ class Evaluate {
             double minEval = Double.MAX_VALUE;
             for (Move m: legalMoves) {
                 p.makeMove(m);
-                currNode.children.add(new Node<String>());
-                Node<String> child = currNode.children.get(currNode.children.size() - 1);
-                child.children = new ArrayList<Node<String>>();
-                double eval;
-                if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
-                    eval = evalNodeCountDebug(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
-                else
-                    eval = evalNodeCountDebug(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
+                double eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount);
                 if (eval < minEval) {
                     minEval = eval;
                     if (bestMove != null) {
                         bestMove[0] = m;
                     }
                 }
-                child.data = m.toString() + " " + eval + " " + nodeDepth;
                 beta = Math.min(minEval, beta);
                 p.undoMove();
                 if (minEval <= alpha) {
@@ -349,20 +259,13 @@ class Evaluate {
         double eval = 0;
         s3.start();
         eval += evalBasicMaterial(p);
-        double positionalFactor = Math.pow(0.8, Math.abs(eval)); //lower positional evaluation weight if large material imbalance
-        eval += positionalFactor * evalPawns(p);
-        double loneKingEval = evalLoneKingEndgame(p);
-        if (loneKingEval != 0) {
-            eval += loneKingEval;
-        }
-        else {
-            eval += positionalFactor * evalPieces(p);
-        }
-        eval += rightToMove(p);
         s3.stop();
+        //eval += evalPawns(p);
+        eval += evalLoneKingEndgame(p);
         total_nodes++;
         //basic engame technique
         return eval;
+
     }
 
     private static double evalBasicMaterial(Position p) {
@@ -373,81 +276,6 @@ class Evaluate {
         for (ChessPiece piece: p.blackPieces) {
             eval -= piece.pieceMaterialValue;
         }
-        return eval;
-    }
-
-    public static double evalSpaceControl(Position p) {
-        double eval = 0;
-        //TO DO POSSIBLY
-
-        return eval;
-    }
-
-    public static double evalPieces(Position p) {
-        double eval = 0;
-        ChessPiece blackKing = null;
-        ChessPiece whiteKing = null;
-        double whitePieceMatSum = 0;
-        double blackPieceMatSum = 0;
-
-        for (ChessPiece piece: p.whitePieces) {
-            if (piece.id == PieceID.KNIGHT) {
-                eval += EvalTables.KNIGHT_TABLE[EvalTables.tableConvWhite(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.BISHOP) {
-                eval += EvalTables.BISHOP_TABLE[EvalTables.tableConvWhite(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.ROOK) {
-                eval += EvalTables.ROOK_TABLE[EvalTables.tableConvWhite(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.QUEEN) {
-                eval += EvalTables.QUEEN_TABLE[EvalTables.tableConvWhite(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.KING) {
-                whiteKing = piece;
-            }
-            else {
-                continue;
-            }
-            if (piece.id != PieceID.KING)
-                whitePieceMatSum += piece.pieceMaterialValue;
-        }
-        for (ChessPiece piece: p.blackPieces) {
-            if (piece.id == PieceID.KNIGHT) {
-                eval -= EvalTables.KNIGHT_TABLE[EvalTables.tableConvBlack(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.BISHOP) {
-                eval -= EvalTables.BISHOP_TABLE[EvalTables.tableConvBlack(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.ROOK) {
-                eval -= EvalTables.ROOK_TABLE[EvalTables.tableConvBlack(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.QUEEN) {
-                eval -= EvalTables.QUEEN_TABLE[EvalTables.tableConvBlack(piece.currentSquare)] / 100.0;
-            }
-            else if (piece.id == PieceID.KING) {
-                blackKing = piece;
-            }
-            else {
-                continue;
-            }
-            if (piece.id != PieceID.KING)
-                blackPieceMatSum += piece.pieceMaterialValue;
-        }
-
-        if (blackPieceMatSum >= 15) {
-            eval += EvalTables.KING_MG_TABLE[EvalTables.tableConvWhite(whiteKing.currentSquare)] / 100.0;
-        }
-        else {
-            eval += EvalTables.KING_EG_TABLE[EvalTables.tableConvWhite(whiteKing.currentSquare)] / 100.0;
-        }
-        if (whitePieceMatSum >= 15) {
-            eval -= EvalTables.KING_MG_TABLE[EvalTables.tableConvBlack(blackKing.currentSquare)] / 100.0;
-        }
-        else {
-            eval -= EvalTables.KING_EG_TABLE[EvalTables.tableConvBlack(blackKing.currentSquare)] / 100.0;
-        }
-
         return eval;
     }
 
@@ -463,23 +291,16 @@ class Evaluate {
             blackPawnsByFile.add(new ArrayList<>(2));
         }
         int pFile;
-        double bonusPawnPts = 0;
         for (ChessPiece piece: p.whitePieces) {
             if (piece.id == PieceID.PAWN) {
                 pFile = (piece.currentSquare & bitmaskFile) >> 3;
                 whitePawnsByFile.get(pFile).add(piece);
-                bonusPawnPts = EvalTables.PAWN_TABLE[EvalTables.tableConvWhite(piece.currentSquare)] / 100.0;
-                piece.pieceMaterialValue += bonusPawnPts;
-                eval += bonusPawnPts;
             } 
         }
         for (ChessPiece piece: p.blackPieces) {
             if (piece.id == PieceID.PAWN) {
                 pFile = (piece.currentSquare & bitmaskFile) >> 3;
                 blackPawnsByFile.get(pFile).add(piece);
-                bonusPawnPts = EvalTables.PAWN_TABLE[EvalTables.tableConvBlack(piece.currentSquare)] / 100.0;
-                piece.pieceMaterialValue += bonusPawnPts;
-                eval -= bonusPawnPts;
             } 
         }
 
@@ -507,10 +328,10 @@ class Evaluate {
             eval += PAWN_STACKS[whitePawnsByFile.get(file).size()];
             eval -= PAWN_STACKS[blackPawnsByFile.get(file).size()];
         }
-        //System.out.println("Eval before pawn island calc: " + eval);
+        System.out.println("Eval before pawn island calc: " + eval);
         //pawn islands
-        //System.out.println("WHITE PAWN ISLANDS: " + wIslands);
-        //System.out.println("BLACK PAWN ISLANDS: " + bIslands);
+        System.out.println("WHITE PAWN ISLANDS: " + wIslands);
+        System.out.println("BLACK PAWN ISLANDS: " + bIslands);
         eval += PAWN_ISLANDS[wIslands];
         eval -= PAWN_ISLANDS[bIslands];
         //checked for passed, isolated, connected pawns
@@ -522,7 +343,7 @@ class Evaluate {
         for (int n = 0; n < 2; n++) {
             for (int file = 0; file < 8; file++) {
                 for (ChessPiece pawn: currentSidePawns.get(file)) {
-                    //System.out.println("Current evaluation: " + eval);
+                    System.out.println("Current evaluation: " + eval);
                     passed = true;
                     isolated = true;
                     connected = false;
@@ -568,17 +389,16 @@ class Evaluate {
                     }
                     if (passed) {
                         eval += bMult * (pawn.pieceMaterialValue) * PASSED_PAWN_MULTIPLIER_BONUS * 0.02 * (50 - numPiecesOnBoard);
-                        //System.out.println(pawn + " IS PASSED " + " BONUS = " + bMult * (pawn.pieceMaterialValue) * PASSED_PAWN_MULTIPLIER_BONUS * 0.02 * (50 - numPiecesOnBoard));
+                        System.out.println(pawn + " IS PASSED " + " BONUS = " + bMult * (pawn.pieceMaterialValue) * PASSED_PAWN_MULTIPLIER_BONUS * 0.02 * (50 - numPiecesOnBoard));
                     }
                     if (isolated) {
                         eval += bMult * (pawn.pieceMaterialValue) * ISOLATED_PAWN_MULTIPLIER_BONUS;
-                        //System.out.println(pawn + " IS ISOLATED " + " BONUS = " + bMult * (pawn.pieceMaterialValue) * ISOLATED_PAWN_MULTIPLIER_BONUS);
+                        System.out.println(pawn + " IS ISOLATED " + " BONUS = " + bMult * (pawn.pieceMaterialValue) * ISOLATED_PAWN_MULTIPLIER_BONUS);
                     }
                     if (connected) {
                         eval += bMult * (pawn.pieceMaterialValue) * CONNECTED_PAWN_MULTIPLIER_BONUS;
-                        //System.out.println(pawn + " IS CONNECTED " + " BONUS = " + bMult * (pawn.pieceMaterialValue) * CONNECTED_PAWN_MULTIPLIER_BONUS);
+                        System.out.println(pawn + " IS CONNECTED " + " BONUS = " + bMult * (pawn.pieceMaterialValue) * CONNECTED_PAWN_MULTIPLIER_BONUS);
                     }
-                    pawn.pieceMaterialValue = 1;
                 }
             }
             bMult = -1;
@@ -586,10 +406,6 @@ class Evaluate {
             oppSidePawns = whitePawnsByFile;
         }
         return eval;
-    }
-
-    public static double rightToMove(Position p) {
-        return p.activeColor == Color.WHITE ? 0.02 : -0.02;
     }
 
     private static double evalLoneKingEndgame(Position p) {
@@ -644,7 +460,7 @@ class Evaluate {
         return evalFormatted;
     }
 
-    static class MoveComparatorShallow implements Comparator<Move> {
+    static class MoveComparator implements Comparator<Move> {
         public int compare(Move m1, Move m2) {
             double[] moveVals = new double[2];
             int index = 0;
@@ -670,21 +486,6 @@ class Evaluate {
                 pos.undoMove();
             }
             return (int)(1000 * (moveVals[1] - moveVals[0]));
-        }
-    }
-
-    static class MoveComparatorDeep implements Comparator<Move> {
-        public int compare(Move m1, Move m2) {
-            double[] moveVals = new double[2];
-            int index = 0;
-            for (Move m: new Move[]{m1, m2}) {
-                moveVals[index] = 0;
-                if (m.capturedPiece != null) {
-                    moveVals[index] += m.capturedPiece.pieceMaterialValue;
-                }
-                index++;
-            }
-            return (int)(100 * (moveVals[1] - moveVals[0]));
         }
     }
 

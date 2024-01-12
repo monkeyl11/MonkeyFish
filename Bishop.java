@@ -5,7 +5,7 @@ class Bishop extends ChessPiece {
 
     public Bishop(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
-        super(3, currentSquare, pieceColor);
+        super(3.3, currentSquare, pieceColor);
         this.id = PieceID.BISHOP;
     }
 

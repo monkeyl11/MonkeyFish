@@ -40,7 +40,7 @@ class Position {
     private Stack<Pawn> enPassantHistory; //for undoing moves
     private Stack<Integer> halfMoveHistory; //keeping track of halfmove counts
 
-    private Stack<Move> prevMoves;
+    public Stack<Move> prevMoves;
 
 
     //private HashMap<Position, Integer> prevPositions; //tracking three-fold

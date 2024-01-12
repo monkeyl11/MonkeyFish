@@ -167,6 +167,7 @@ abstract class ChessPiece {
     //         o.addPinnedPiece(pinnedPiece, fileDirection, rankDirection);
     // }
 
+
     @Override
     public boolean equals(Object o) {
         if (o == this) {
@@ -176,8 +177,10 @@ abstract class ChessPiece {
             return false;
         }
         ChessPiece c = (ChessPiece)o;
-        return c.id == this.id && c.pieceColor == this.pieceColor && c.specialID == this.specialID;
+        return c.id == this.id && c.pieceColor == this.pieceColor && c.specialID == this.specialID
+            && c.pieceMaterialValue == this.pieceMaterialValue;
     }
+
 
     @Override
     public int hashCode() {

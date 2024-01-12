@@ -4,4 +4,8 @@ public class Node<T> {
     public T data;
     //public Node<T> parent;
     public List<Node<T>> children;
+
+    public String toString() {
+        return data.toString();
+    }
 }

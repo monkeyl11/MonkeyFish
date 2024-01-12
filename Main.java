@@ -13,6 +13,9 @@ class Main {
     private static Stopwatch stopwatch = new Stopwatch();
     private static int totalCasesFailed = 0;
     private static int totalCases = 0;
+
+    protected static final byte bitmaskRank = 0b00000111;
+    protected static final byte bitmaskFile = 0b00111000;
     
     public static void main(String[] args){
         // try {
@@ -21,7 +24,9 @@ class Main {
         // catch (Exception e) {
         //     System.out.println(e);
         // }
-        //Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - d3 0 28");
+
+        //engineCompare(null, true);
+
         //perft(2, p, true);
         //perft(6, "8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - d3 0 28", true);
 
@@ -29,24 +34,56 @@ class Main {
         //perftTestShallow();
         //2524s
         //perftTestDeep();
-        // stopwatch.start();
-        // Position p = new Position("1r2k1r1/1b1nb2p/pB1p1p2/1p2p3/8/B1Q5/PPP2PPP/R4RK1 w - - 2 20");
+
+        // Position p = new Position("rnbqkbnr/2pp1p1p/1p2p3/p5p1/P1PP4/4P3/1P3PPP/RNBQKBNR w KQkq g6 0 5");
         // Move[] bestMove = new Move[1];
         // Node<String> root = new Node<String>();
         // root.children = new ArrayList<>();
         // stopwatch.start();
-        // double e = Evaluate.evaluatePosition(p);
-        // System.out.println("EVALUATION: " + Evaluate.evalNodeCount(p, 10000000.0, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove, 0, e, 0));
+        // double e = EvaluateOld.evaluatePosition(p);
+        // double evaluation = EvaluateOld.evalNodeCount(p, 1000000.0, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove, 0, e, 0);
+        
+        // System.out.println("EVALUATION: " + EvaluateOld.formatEval(evaluation));
+
         // stopwatch.stop();
         // System.out.println("TOTAL TIME: " + stopwatch.time());
-        // System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
-        // System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
+        // //System.out.println("TIME SPENT GENERATING MOVES: " + EvaluateOld.s.time());
+        // //System.out.println("TIME SPENT MAKING MOVES: " + EvaluateOld.s2.time());
+        // System.out.println("TIME SPENT EVALUATING POSITIONS: " + EvaluateOld.s3.time());
+        // System.out.println("TOTAL LEAF NODES EVALUATED: " + EvaluateOld.total_nodes);
+        // System.out.println("MAX DEPTH SEARCHED: " + EvaluateOld.maxDepth);
+        // System.out.println(bestMove[0]);
+
+        // stopwatch.reset();
+
+        // Position p2 = new Position("r1b1k2r/1ppp1ppp/p1n5/1q1nP3/2NP4/2PQ1NPB/P3PK1P/R4R2 b kq - 0 16");
+        // Move[] bestMove2 = new Move[1];
+        // Node<String> root2 = new Node<String>();
+        // root2.children = new ArrayList<>();
+        // stopwatch.start();
+        // double e2 = Evaluate.evaluatePosition(p2);
+        // double evaluation2 = Evaluate.evalNodeCountDebug(p2, 100000000.0, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove2, 0, e2, 0, null, root2);
+        
+        // System.out.println("EVALUATION: " + Evaluate.formatEval(evaluation2));
+
+        // stopwatch.stop();
+        // System.out.println("TOTAL TIME: " + stopwatch.time());
+        // //System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
+        // //System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
         // System.out.println("TIME SPENT EVALUATING POSITIONS: " + Evaluate.s3.time());
         // System.out.println("TOTAL LEAF NODES EVALUATED: " + Evaluate.total_nodes);
         // System.out.println("MAX DEPTH SEARCHED: " + Evaluate.maxDepth);
-        // System.out.println(bestMove[0]);
+        // System.out.println(bestMove2[0]);
 
-        playEngine(null, true);
+        //Position p = new Position("r1b2rk1/1ppp1ppp/p7/3nP3/P1Qn4/2P2NPB/R3PK1P/5R2 b - - 1 20");
+        //System.out.println(Evaluate.evaluatePosition(p));
+
+        //engineCompare(null, true);
+
+
+
+
+        playEngine(null, true, false);
 
         // Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - - 0 28");
         // p.makeMove("Kd5");
@@ -63,7 +100,7 @@ class Main {
         
     }
 
-    public static void playEngine(String fen, boolean userIsWhite) {
+    public static void engineCompare(String fen, boolean oldEngineIsWhite) {
         Position p = null;
         if (fen == null) {
             p = new Position(true);
@@ -71,7 +108,51 @@ class Main {
         else {
             p = new Position(fen);
         }
-        boolean userTurn = userIsWhite;
+        boolean oldEngineTurn = p.activeColor == Color.WHITE ? oldEngineIsWhite : !oldEngineIsWhite;
+        while(true) {
+            p.isDrawn();
+            p.legalMoves();
+            if (p.positionStatus() != 0) {
+                break;
+            }
+            double baseLineEval = 1000.0;
+            Stopwatch s = new Stopwatch();
+            Move[] move = new Move[1];
+            double e = Evaluate.evaluatePosition(p);
+            double eval = 0;
+
+            while (s.time() < 1) {
+                s.reset();
+                s.start();
+                if (oldEngineTurn)
+                    eval = EvaluateOld.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0);
+                else
+                    eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0);
+                s.stop();
+                baseLineEval *= (6 + Math.random() * 8.0);
+            }
+            if (oldEngineTurn) 
+                System.out.println("Old Engine evaluation: " + eval);
+            else
+                System.out.println("Engine evaluation: " + eval);
+            //System.out.println(p.toFEN());
+            System.out.println("Move played: " + move[0]);
+            //System.out.println("Eval num used: " + baseLineEval);
+            //System.out.println(p);
+            p.makeMove(move[0]);
+            oldEngineTurn = !oldEngineTurn;
+        }
+    }
+
+    public static void playEngine(String fen, boolean userIsWhite, boolean enginePlay) {
+        Position p = null;
+        if (fen == null) {
+            p = new Position(true);
+        }
+        else {
+            p = new Position(fen);
+        }
+        boolean userTurn = p.activeColor == Color.WHITE ? userIsWhite : !userIsWhite;
         Scanner input = new Scanner(System.in);
         while(true) {
             p.isDrawn();
@@ -79,8 +160,8 @@ class Main {
             if (p.positionStatus() != 0) {
                 break;
             }
-            double baseLineEval = 10000.0;
-            if (userTurn) {
+            double baseLineEval = 100000.0;
+            if (userTurn && !enginePlay) {
                 while (true) {
                     System.out.print("Make move: ");
                     String userResponse = input.nextLine();
@@ -98,14 +179,17 @@ class Main {
                 Move[] move = new Move[1];
                 double e = Evaluate.evaluatePosition(p);
                 double eval = 0;
-                while (s.time() < 2) {
+
+                while (s.time() < 3) {
                     s.start();
                     eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0);
                     s.stop();
                     baseLineEval *= 10;
                 }
-                System.out.println("Engine evaluation: " + eval);
+                System.out.println("Engine evaluation: " + Evaluate.formatEval(eval));
                 System.out.println("Engine plays " + move[0]);
+                //System.out.println("Eval num used: " + baseLineEval);
+                //System.out.println(p);
                 p.makeMove(move[0]);
                 userTurn = true;
             }

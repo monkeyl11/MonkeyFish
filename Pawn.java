@@ -9,12 +9,17 @@ class Pawn extends ChessPiece {
     private final static int LAST_RANK_BLACK = 0;
     private final static int EN_PASSANT_RANK_BLACK = 3;
     private final static int INITIAL_PAWN_STEP = 2;
+
+    //private static final double[] pawnFileEvals = {-0.1, 0.0, 0.1, 0.25, 0.25, 0.1, 0.0, -0.1};
+    //private static final double[] pawnRankEvals = {0, 0, 0.05, 0.1, 0.25, 0.5, 1.5}; //last index should be irrelevant
     private boolean enPassant;
 
     public int enPassantTurn = Integer.MIN_VALUE;
 
     public Pawn(byte currentSquare, Color pieceColor) {
         //add pawn to square currentSquare
+        //byte tableConv = (byte)(((currentSquare & bitmaskFile) >> 3) + 
+        //(7 - (currentSquare & bitmaskRank)) << 3);
         super(1, currentSquare, pieceColor);
         this.id = PieceID.PAWN;
         this.enPassant = false;
@@ -145,6 +150,9 @@ class Pawn extends ChessPiece {
         else if (rankDiff == -INITIAL_PAWN_STEP) {
             this.enPassant = this.pieceColor == Color.BLACK ? true : false;
         }
+
+        // this.pieceMaterialValue = 1 + (pieceColor == Color.WHITE ? EvalTables.PAWN_TABLE[EvalTables.tableConvWhite(currentSquare)] / 100.0
+        // : EvalTables.PAWN_TABLE[EvalTables.tableConvBlack(currentSquare)] / 100.0);
     }
 
     public void setEnPassant(boolean b) {
