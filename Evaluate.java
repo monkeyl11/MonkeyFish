@@ -178,7 +178,7 @@ class Evaluate {
 
 
 
-    public static double evalNodeCount(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, double prevEval, int numMoves) {
+    public static double evalNodeCount(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, double prevEval, int numMoves, Move move) {
         total_eval_calls++;
         maxDepth = Math.max(depth, maxDepth);
         if (p.isDrawn()) {
@@ -186,15 +186,13 @@ class Evaluate {
         }
         double posEval = evaluatePosition(p);
         if (Math.abs(posEval - prevEval) <= 2) {
-            if (nodeDepth <= 1) {
+            if (nodeDepth <= 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
                 return posEval * (1 - DEPTH_FACTOR * depth);
             }
         }
-        else if (Math.abs(posEval - prevEval) >= 3){
-        }
-        if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
-            return posEval;
-        }
+        // if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
+        //     return posEval;
+        // }
         List<Move> legalMoves = p.legalMoves();
         double posStatus = p.positionStatus();
         if (posStatus == 0.5) { //Drawn by stalemate
@@ -203,17 +201,25 @@ class Evaluate {
         else if (posStatus == 1) { //Checkmate
             return (p.activeColor == Color.WHITE ? -1 : 1) * (WIN_EVAL - DEPTH_FACTOR * depth); //checkmate
         }
-        if (nodeDepth >= 30000) {
+        if (nodeDepth >= 1000) {
             pos = p;
             Collections.sort(legalMoves, new MoveComparatorShallow());
             pos = null;
+        }
+        else {
+            Collections.sort(legalMoves, new MoveComparatorDeep());
         }
         int moveCount = legalMoves.size();
         if (p.activeColor == Color.WHITE) {
             double maxEval = -Double.MAX_VALUE;
             for (Move m: legalMoves) {
                 p.makeMove(m);
-                double eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount);
+                //if recapture
+                double eval;
+                if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
+                    eval = evalNodeCount(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m);
+                else
+                    eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m);
                 if (eval > maxEval) {
                     maxEval = eval;
                     if (bestMove != null) {
@@ -232,7 +238,11 @@ class Evaluate {
             double minEval = Double.MAX_VALUE;
             for (Move m: legalMoves) {
                 p.makeMove(m);
-                double eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount);
+                double eval;
+                if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
+                    eval = evalNodeCount(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m);
+                else
+                    eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m);
                 if (eval < minEval) {
                     minEval = eval;
                     if (bestMove != null) {
@@ -357,8 +367,8 @@ class Evaluate {
         }
         else {
             eval += positionalFactor * evalPieces(p);
+            eval += rightToMove(p);
         }
-        eval += rightToMove(p);
         s3.stop();
         total_nodes++;
         //basic engame technique
@@ -589,7 +599,7 @@ class Evaluate {
     }
 
     public static double rightToMove(Position p) {
-        return p.activeColor == Color.WHITE ? 0.02 : -0.02;
+        return p.activeColor == Color.WHITE ? 0.15 : -0.15;
     }
 
     private static double evalLoneKingEndgame(Position p) {

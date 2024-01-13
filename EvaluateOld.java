@@ -188,7 +188,7 @@ class EvaluateOld {
                 return posEval * (1 - DEPTH_FACTOR * depth);
             }
         }
-        else if (Math.abs(posEval - prevEval) >= 2){
+        else if (Math.abs(posEval - prevEval) >= 3){
             nodeDepth *= numMoves;
         }
         // if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {

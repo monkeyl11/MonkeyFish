@@ -83,7 +83,7 @@ class Main {
 
 
 
-        playEngine(null, true, false);
+        playEngine(null, false, false);
 
         // Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - - 0 28");
         // p.makeMove("Kd5");
@@ -121,13 +121,12 @@ class Main {
             double e = Evaluate.evaluatePosition(p);
             double eval = 0;
 
-            while (s.time() < 1) {
-                s.reset();
+            while (s.time() < 0.05) {
                 s.start();
                 if (oldEngineTurn)
                     eval = EvaluateOld.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0);
                 else
-                    eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0);
+                    eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0, null);
                 s.stop();
                 baseLineEval *= (6 + Math.random() * 8.0);
             }
@@ -154,17 +153,23 @@ class Main {
         }
         boolean userTurn = p.activeColor == Color.WHITE ? userIsWhite : !userIsWhite;
         Scanner input = new Scanner(System.in);
+        String userResponse;
         while(true) {
             p.isDrawn();
             List<Move> legalMoves = p.legalMoves();
             if (p.positionStatus() != 0) {
                 break;
             }
-            double baseLineEval = 100000.0;
+            double baseLineEval = 10000.0;
             if (userTurn && !enginePlay) {
                 while (true) {
                     System.out.print("Make move: ");
-                    String userResponse = input.nextLine();
+                    userResponse = input.nextLine();
+                    if (userResponse.equals("undo")) {
+                        p.undoMove();
+                        p.undoMove();
+                        break;
+                    }
                     try {
                         if (p.makeMove(userResponse)) {
                             break;
@@ -172,7 +177,8 @@ class Main {
                     }
                     catch (Exception e){};
                 }
-                userTurn = false;
+                if (!userResponse.equals("undo"))
+                    userTurn = false;
             }
             else {
                 Stopwatch s = new Stopwatch();
@@ -180,9 +186,9 @@ class Main {
                 double e = Evaluate.evaluatePosition(p);
                 double eval = 0;
 
-                while (s.time() < 3) {
+                while (s.time() < 5) {
                     s.start();
-                    eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0);
+                    eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, e, 0, null);
                     s.stop();
                     baseLineEval *= 10;
                 }
