@@ -49,6 +49,17 @@ class Move {
         this.isKingsideCastle = isKingsideCastle;
         this.isQueensideCastle = isQueensideCastle;
         this.currentPiece = king;
+        byte bIndexing = 0;
+        if (color == Color.BLACK) {
+            bIndexing = 0b111;
+        }
+        this.startSquare = (byte)(0b00100000 + bIndexing);
+        if (isKingsideCastle) {
+            this.endSquare = (byte)(0b00110000 + bIndexing);
+        }
+        else {
+            this.endSquare = (byte)(0b00010000 + bIndexing);
+        }
     }
 
     @Override

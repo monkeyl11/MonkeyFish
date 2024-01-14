@@ -130,6 +130,8 @@ abstract class ChessPiece {
 
     abstract void possibleMoves(Board b, List<Move> moveList, OppPieceInfo pieceInfo);
 
+
+
     public char toChar() {
         char ret = ' ';
         if(this.id == PieceID.PAWN) {
@@ -180,6 +182,7 @@ abstract class ChessPiece {
         return c.id == this.id && c.pieceColor == this.pieceColor && c.specialID == this.specialID
             && c.pieceMaterialValue == this.pieceMaterialValue;
     }
+
 
 
     @Override

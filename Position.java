@@ -44,9 +44,11 @@ class Position {
 
 
     //private HashMap<Position, Integer> prevPositions; //tracking three-fold
-    private int turn; //track 50-move rule (100 turn), also en passant
+    public int turn; //track 50-move rule (100 turn), also en passant
     private int halfmoveClock = 0;
     private boolean gameOver = false;
+
+    private long TTHash; //Stores the hash for the current position
 
     public Position(Board b, Color activeColor, boolean autoSetBoard, int turn, int[][] castlingRights) {
         if (b.equals(new Board()) && autoSetBoard) {
@@ -62,6 +64,7 @@ class Position {
         this.enPassantHistory = new Stack<>();
         this.halfMoveHistory = new Stack<>();
         setUpPieceSets();
+        initTTHash();
     }
     
     public Position(boolean setUpBoard) {
@@ -230,6 +233,7 @@ class Position {
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("FEN Error: Invalid Fullmove Number");
         }
+        initTTHash();
     }
 
     public void setUpPieceSets() {
@@ -423,11 +427,11 @@ class Position {
          && (c[0] - b[0]) * (c[0] - b[0]) + (c[1] - b[1]) * (c[1] - b[1]) < acDist;
     }
 
-    private int getDirection(int fileDiff, int rankDiff) {
-        rankDiff = rankDiff == 0 ? 0 : rankDiff / Math.abs(rankDiff);
-        fileDiff = fileDiff == 0 ? 0 : fileDiff / Math.abs(fileDiff);
-        return fileDiff * 10 + rankDiff;
-    }
+    // private int getDirection(int fileDiff, int rankDiff) {
+    //     rankDiff = rankDiff == 0 ? 0 : rankDiff / Math.abs(rankDiff);
+    //     fileDiff = fileDiff == 0 ? 0 : fileDiff / Math.abs(fileDiff);
+    //     return fileDiff * 10 + rankDiff;
+    // }
 
     private ChessPiece getKing() {
         HashSet<ChessPiece> pieces = this.activeColor == Color.WHITE ? whitePieces : blackPieces;
@@ -565,6 +569,7 @@ class Position {
         turn++;
         activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
         positionStatus.nextMove();
+        updateTTHash(m, false);
     }
 
     public boolean makeMove(String s) {
@@ -657,6 +662,7 @@ class Position {
         }
         positionStatus.prevMove();
         gameOver = false;
+        updateTTHash(m, true);
     }
 
     public Move algebraicNotationToMove(String s) {
@@ -820,7 +826,7 @@ class Position {
     private void checkBasicDraws() {
         //TO DO: THREEFOLD REPETITION
         //FIFTY MOVE RULE
-        if (halfmoveClock == 50) {
+        if (halfmoveClock == 100) {
             positionStatus.status = PositionStatus.Status.FIFTY_MOVE;
             gameOver = true;
         }
@@ -917,6 +923,93 @@ class Position {
         b.placePiece(p, p.currentSquare);
     }
 
+    private void initTTHash() {
+        long currPosRand = 0;
+        long castlingRightsRand = 0;
+        long enPassantRand = 0;
+        long sideToMove = 0;
+
+
+        for (ChessPiece p: whitePieces) {
+            currPosRand ^= pieceHash(p.id, p.currentSquare, Color.WHITE);
+        }
+        for (ChessPiece p: blackPieces) {
+            currPosRand ^= pieceHash(p.id, p.currentSquare, Color.BLACK);
+        }
+        //wipe lower eight bits, which are meant to represent other values, (0-2 en passant file, 3-6 castling rights, 7 side to move)
+        currPosRand &= (~0b11111111); 
+    
+
+        //deal with en passant pawns
+        if (!enPassantHistory.empty()) {
+            if (enPassantHistory.peek().enPassantTurn == turn - 1) {
+                enPassantRand = (long)BoardMethods.getFile(enPassantHistory.peek().currentSquare);
+            }
+        }
+
+        //deal with castling rights
+        castlingRightsRand += (castlingRights[0][0] == 0 ? 0 : 1) << 3;
+        castlingRightsRand += (castlingRights[0][1] == 0 ? 0 : 1) << 4;
+        castlingRightsRand += (castlingRights[1][0] == 0 ? 0 : 1) << 5;
+        castlingRightsRand += (castlingRights[1][1] == 0 ? 0 : 1) << 6;
+
+        sideToMove = activeColor == Color.WHITE ? (1 << 7) : 0;
+
+        TTHash = currPosRand ^ castlingRightsRand ^ enPassantRand ^ sideToMove;
+
+    }
+
+    private void updateTTHash(Move m, boolean undo) {
+        long castlingRightsRand = 0;
+        long enPassantRand = 0;
+        long sideToMove = 0;
+
+        ChessPiece captured = m.capturedPiece;
+        ChessPiece moved = m.currentPiece;
+
+        TTHash ^= pieceHash(moved.id, m.startSquare, moved.pieceColor);
+        TTHash ^= pieceHash(moved.id, m.endSquare, moved.pieceColor);
+        if (m.capturedPiece != null)
+            TTHash ^= pieceHash(captured.id, captured.currentSquare, captured.pieceColor);
+
+        byte bIndexing = 0;
+        if (m.color == Color.BLACK) {
+            bIndexing = 0b111;
+        }
+        //Need to move the rook too
+        if (m.isKingsideCastle) {
+            TTHash ^= pieceHash(PieceID.ROOK, (byte)(WK_ROOK_SQUARE + bIndexing), moved.pieceColor);
+            TTHash ^= pieceHash(PieceID.ROOK, (byte)(WK_ROOK_SQUARE + PREV_FILE * 2 + bIndexing), moved.pieceColor);
+        }
+        else if (m.isQueensideCastle) {
+            TTHash ^= pieceHash(PieceID.ROOK, (byte)(WQ_ROOK_SQUARE + bIndexing), moved.pieceColor);
+            TTHash ^= pieceHash(PieceID.ROOK, (byte)(WK_ROOK_SQUARE + NEXT_FILE * 3 + bIndexing), moved.pieceColor);
+        }
+
+        TTHash &= (~0b11111111); //wipe lower eight bits, see above init method for reason
+
+        //deal with en passant pawns
+        if (!enPassantHistory.empty()) {
+            if (enPassantHistory.peek().enPassantTurn == turn - 1) {
+                enPassantRand = (long)BoardMethods.getFile(enPassantHistory.peek().currentSquare);
+            }
+        }
+
+        //deal with castling rights
+        castlingRightsRand += (castlingRights[0][0] == 0 ? 0 : 1) << 3;
+        castlingRightsRand += (castlingRights[0][1] == 0 ? 0 : 1) << 4;
+        castlingRightsRand += (castlingRights[1][0] == 0 ? 0 : 1) << 5;
+        castlingRightsRand += (castlingRights[1][1] == 0 ? 0 : 1) << 6;
+
+        sideToMove = activeColor == Color.WHITE ? (1 << 7) : 0;
+
+        TTHash ^= (castlingRightsRand ^ enPassantRand ^ sideToMove);
+    }
+
+    private long pieceHash(PieceID pid, byte square, Color color) {
+        return (new Random((pid.ordinal() << 9) + (color.ordinal() << 6) + square)).nextLong();
+    }
+
     public String toFEN() {
         StringBuilder fen = new StringBuilder();
 
@@ -1005,6 +1098,7 @@ class Position {
                 && p.halfMoveHistory.equals(this.halfMoveHistory)
                 && p.prevMoves.equals(this.prevMoves)
                 && p.turn == this.turn
+                && p.TTHash == this.TTHash
                 && p.halfmoveClock == this.halfmoveClock;
     }
 
@@ -1021,6 +1115,10 @@ class Position {
                 && p.halfmoveClock == this.halfmoveClock;
     }
 
+    public long getTTHash() {
+        return TTHash;
+    }
+
     //Should be used only for detecting "same" positions in three-fold repetition
     @Override
     public boolean equals(Object o) {
@@ -1031,8 +1129,7 @@ class Position {
             return false;
         }
         Position p = (Position)o;
-        return p.b.equals(this.b) && this.activeColor == p.activeColor
-                && p.legalMoves().equals(this.legalMoves());
+        return p.TTHash == this.TTHash;
     }
 
     @Override
@@ -1071,11 +1168,17 @@ class Position {
             if (o == this) {
                 return true;
             }
-            if (!(o instanceof Move)) {
+            if (!(o instanceof Position)) {
                 return false;
             }
             PositionStatus p = (PositionStatus)o;
             return p.status == this.status && p.turn == this.turn;
+        }
+
+        @Override
+        public int hashCode() {
+        //random function
+            return 0;
         }
 
         @Override

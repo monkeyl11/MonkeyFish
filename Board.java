@@ -159,6 +159,28 @@ class Board {
         return getPieceFromSquare(BoardMethods.stringToSquare(square));
     }
 
+    public boolean positionEquals(Board b) {
+         if (b == this) {
+            return true;
+        }
+        for (byte i = 0; i < board.length * board.length; i++) {
+            ChessPiece thisPiece = this.getPieceFromSquare(i);
+            ChessPiece otherPiece = b.getPieceFromSquare(i);
+            if (thisPiece != null && otherPiece != null) {
+                if (thisPiece.pieceColor != otherPiece.pieceColor || thisPiece.id != otherPiece.id) {
+                    return false;
+                }
+            }
+            else if (thisPiece == null && otherPiece == null) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        return true;
+    }
+    
     //Only accounts for basic piece properties (location, color, type)
     //Does not account for special piece properties belonging to pawn, rook, king
     @Override

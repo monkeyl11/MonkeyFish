@@ -1,7 +1,7 @@
 import java.util.*;
 
 class Evaluate {
-    private final static double WIN_EVAL = 10000.0;
+    public final static double WIN_EVAL = 10000.0;
     private final static double DRAWN_EVAL = 0;
 
     private final static double WIN_SCORE = 1;
@@ -20,7 +20,7 @@ class Evaluate {
     private static final double PASSED_PAWN_MULTIPLIER_BONUS = 0.5;
     private static final double ISOLATED_PAWN_MULTIPLIER_BONUS = -0.1;
 
-
+    public static TranspositionTable tTable = new TranspositionTable();
 
     public static long total_nodes = 0;
     public static long total_eval_calls = 0;
@@ -31,6 +31,8 @@ class Evaluate {
 
     private static Position pos; //For use by comparator
     public static int maxDepth = 0;
+
+    //for debugging
 
 
     public static void evaluate(Position p) {
@@ -106,102 +108,35 @@ class Evaluate {
     // }
 
     //search tree option 2, minimax returning when a node depth is hit
-    // public static double evalNodeCount(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, Node<String> currNode) {
-    //     maxDepth = Math.max(depth, maxDepth);
-    //     if (p.isDrawn()) {
-    //         return 0;
-    //     }
-    //     if (nodeDepth <= 1) {
-    //         return evaluatePosition(p) ;
-    //     }
-    //     List<Move> legalMoves = p.legalMoves();
-    //     double posStatus = p.positionStatus();
-    //     if (posStatus == 0.5) { //Drawn by stalemate
-    //         return posStatus;
-    //     }
-    //     else if (posStatus == 1) { //Checkmate
-    //         return (p.activeColor == Color.WHITE ? -1 : 1) * WIN_EVAL; //checkmate
-    //     }
-    //     if (nodeDepth >= 30000) {
-    //         pos = p;
-    //         Collections.sort(legalMoves, new MoveComparator());
-    //         pos = null;
-    //     }
-    //     double numMoves = legalMoves.size();
-    //     if (p.activeColor == Color.WHITE) {
-    //         double maxEval = -Double.MAX_VALUE;
-    //         for (Move m: legalMoves) {
-    //             p.makeMove(m);
-    //             currNode.children.add(new Node<String>());
-    //             Node<String> child = currNode.children.get(currNode.children.size() - 1);
-    //             child.children = new ArrayList<Node<String>>();
-    //             double eval = evalNodeCount(p, nodeDepth / numMoves, alpha, beta, null, depth + 1, child);
-    //             if (eval > maxEval) {
-    //                 maxEval = eval;
-    //                 if (bestMove != null) {
-    //                     bestMove[0] = m;
-    //                 }
-    //             }
-    //             child.data = m.toString() + " " + eval;
-    //             alpha = Math.max(maxEval, alpha);
-    //             p.undoMove();
-    //             if (maxEval >= beta) {
-    //                 break;
-    //             }
-    //         }
-    //         return maxEval;
-    //     }
-    //     else {
-    //         double minEval = Double.MAX_VALUE;
-    //         for (Move m: legalMoves) {
-    //             p.makeMove(m);
-    //             currNode.children.add(new Node<String>());
-    //             Node<String> child = currNode.children.get(currNode.children.size() - 1);
-    //             child.children = new ArrayList<Node<String>>();
-    //             double eval = evalNodeCount(p, nodeDepth / numMoves, alpha, beta, null, depth + 1, child);
-    //             if (eval < minEval) {
-    //                 minEval = eval;
-    //                 if (bestMove != null) {
-    //                     bestMove[0] = m;
-    //                 }
-    //             }
-    //             child.data = m.toString() + " " + eval;
-    //             beta = Math.min(minEval, beta);
-    //             p.undoMove();
-    //             if (minEval <= alpha) {
-    //                 break;
-    //             }
-    //         }
-    //         return minEval;
-    //     }
-    // }
-
-
-
-    public static double evalNodeCount(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, double prevEval, int numMoves, Move move) {
+    public static double evalNodeCount(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, int numMoves, Move move) {
         total_eval_calls++;
         maxDepth = Math.max(depth, maxDepth);
+        double tableEntry = tTable.getEntry(p, 0.8 * nodeDepth, p.turn);
+        if (tableEntry != Double.MAX_VALUE) {
+            return tableEntry + (tableEntry > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
+        }
         if (p.isDrawn()) {
             return 0;
         }
-        double posEval = evaluatePosition(p);
-        if (Math.abs(posEval - prevEval) <= 2) {
-            if (nodeDepth <= 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
-                return posEval * (1 - DEPTH_FACTOR * depth);
-            }
+        if (nodeDepth < 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
+            double eval = evaluatePosition(p);
+            return eval + (eval > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
         }
+        nodeDepth = nodeDepth > 1 ? nodeDepth : 1;
         // if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
         //     return posEval;
         // }
         List<Move> legalMoves = p.legalMoves();
         double posStatus = p.positionStatus();
         if (posStatus == 0.5) { //Drawn by stalemate
+            tTable.addEntry(p, 0, nodeDepth, p.turn);
             return posStatus;
         }
         else if (posStatus == 1) { //Checkmate
+            tTable.addEntry(p, (p.activeColor == Color.WHITE ? -1 : 1) * (WIN_EVAL), nodeDepth, p.turn);
             return (p.activeColor == Color.WHITE ? -1 : 1) * (WIN_EVAL - DEPTH_FACTOR * depth); //checkmate
         }
-        if (nodeDepth >= 1000) {
+        if (nodeDepth >= 3000.0) {
             pos = p;
             Collections.sort(legalMoves, new MoveComparatorShallow());
             pos = null;
@@ -217,9 +152,9 @@ class Evaluate {
                 //if recapture
                 double eval;
                 if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
-                    eval = evalNodeCount(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m);
+                    eval = evalNodeCount(p, nodeDepth, alpha, beta, null, depth + 1, moveCount, m);
                 else
-                    eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m);
+                    eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, moveCount, m);
                 if (eval > maxEval) {
                     maxEval = eval;
                     if (bestMove != null) {
@@ -229,9 +164,11 @@ class Evaluate {
                 alpha = Math.max(maxEval, alpha);
                 p.undoMove();
                 if (maxEval >= beta) {
+                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
+            tTable.addEntry(p, maxEval, nodeDepth, p.turn);
             return maxEval;
         }
         else {
@@ -240,9 +177,9 @@ class Evaluate {
                 p.makeMove(m);
                 double eval;
                 if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
-                    eval = evalNodeCount(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m);
+                    eval = evalNodeCount(p, nodeDepth, alpha, beta, null, depth + 1, moveCount, m);
                 else
-                    eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m);
+                    eval = evalNodeCount(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, moveCount, m);
                 if (eval < minEval) {
                     minEval = eval;
                     if (bestMove != null) {
@@ -252,37 +189,44 @@ class Evaluate {
                 beta = Math.min(minEval, beta);
                 p.undoMove();
                 if (minEval <= alpha) {
+                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
+            tTable.addEntry(p, minEval, nodeDepth, p.turn);
             return minEval;
         }
     }
 
-    public static double evalNodeCountDebug(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, double prevEval, int numMoves, Move move, Node<String> currNode) {
+    public static double evalNodeCountDebug(Position p, double nodeDepth, double alpha, double beta, Move[] bestMove, int depth, int numMoves, Move move, Node<String> currNode) {
         total_eval_calls++;
         maxDepth = Math.max(depth, maxDepth);
+        double tableEntry = tTable.getEntry(p, 0.8 * nodeDepth, p.turn);
+        if (tableEntry != Double.MAX_VALUE) {
+            return tableEntry + (tableEntry > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
+        }
         if (p.isDrawn()) {
             return 0;
         }
-        double posEval = evaluatePosition(p);
-        if (Math.abs(posEval - prevEval) <= 2) {
-            if (nodeDepth <= 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
-                return posEval * (1 - DEPTH_FACTOR * depth);
-            }
+        if (nodeDepth < 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
+            double eval = evaluatePosition(p);
+            return eval + (eval > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
         }
+        nodeDepth = nodeDepth > 1 ? nodeDepth : 1;
         // if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
         //     return posEval;
         // }
         List<Move> legalMoves = p.legalMoves();
         double posStatus = p.positionStatus();
         if (posStatus == 0.5) { //Drawn by stalemate
+            tTable.addEntry(p, 0, nodeDepth, p.turn);
             return posStatus;
         }
         else if (posStatus == 1) { //Checkmate
+            tTable.addEntry(p, (p.activeColor == Color.WHITE ? -1 : 1) * (WIN_EVAL), nodeDepth, p.turn);
             return (p.activeColor == Color.WHITE ? -1 : 1) * (WIN_EVAL - DEPTH_FACTOR * depth); //checkmate
         }
-        if (nodeDepth >= 1000) {
+        if (nodeDepth >= 3000.0) {
             pos = p;
             Collections.sort(legalMoves, new MoveComparatorShallow());
             pos = null;
@@ -295,28 +239,30 @@ class Evaluate {
             double maxEval = -Double.MAX_VALUE;
             for (Move m: legalMoves) {
                 p.makeMove(m);
+                //if recapture
                 currNode.children.add(new Node<String>());
                 Node<String> child = currNode.children.get(currNode.children.size() - 1);
                 child.children = new ArrayList<Node<String>>();
-                //if recapture
                 double eval;
                 if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
-                    eval = evalNodeCountDebug(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
+                    eval = evalNodeCountDebug(p, nodeDepth, alpha, beta, null, depth + 1, moveCount, m, child);
                 else
-                    eval = evalNodeCountDebug(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
+                    eval = evalNodeCountDebug(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, moveCount, m, child);
                 if (eval > maxEval) {
                     maxEval = eval;
                     if (bestMove != null) {
                         bestMove[0] = m;
                     }
                 }
-                child.data = m.toString() + " " + eval + " " + nodeDepth;
+                child.data = m.toString() + " " + Evaluate.formatEval(eval) + " " + nodeDepth;
                 alpha = Math.max(maxEval, alpha);
                 p.undoMove();
                 if (maxEval >= beta) {
+                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
+            tTable.addEntry(p, maxEval, nodeDepth, p.turn);
             return maxEval;
         }
         else {
@@ -328,25 +274,29 @@ class Evaluate {
                 child.children = new ArrayList<Node<String>>();
                 double eval;
                 if (m.capturedPiece != null && move != null && move.capturedPiece != null && m.capturedPiece.currentSquare == move.capturedPiece.currentSquare)
-                    eval = evalNodeCountDebug(p, nodeDepth, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
+                    eval = evalNodeCountDebug(p, nodeDepth, alpha, beta, null, depth + 1, moveCount, m, child);
                 else
-                    eval = evalNodeCountDebug(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, posEval, moveCount, m, child);
+                    eval = evalNodeCountDebug(p, nodeDepth / moveCount, alpha, beta, null, depth + 1, moveCount, m, child);
                 if (eval < minEval) {
                     minEval = eval;
                     if (bestMove != null) {
                         bestMove[0] = m;
                     }
                 }
-                child.data = m.toString() + " " + eval + " " + nodeDepth;
+                child.data = m.toString() + " " + Evaluate.formatEval(eval) + " " + nodeDepth;
                 beta = Math.min(minEval, beta);
                 p.undoMove();
                 if (minEval <= alpha) {
+                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
+            tTable.addEntry(p, minEval, nodeDepth, p.turn);
             return minEval;
         }
     }
+
+
 
 
 
@@ -356,6 +306,10 @@ class Evaluate {
 
         //EVALUATION FUNCTION
         //extremely basic for now
+        double tableEntry = tTable.getEntry(p, 0, p.turn);
+        if (tableEntry != Double.MAX_VALUE) {
+            return tableEntry;
+        }
         double eval = 0;
         s3.start();
         eval += evalBasicMaterial(p);
@@ -371,6 +325,8 @@ class Evaluate {
         }
         s3.stop();
         total_nodes++;
+
+        tTable.addEntry(p, eval, 1, p.turn);
         //basic engame technique
         return eval;
     }
@@ -627,8 +583,16 @@ class Evaluate {
         }
     }
 
+    public static void resetTable() {
+        tTable = new TranspositionTable();
+        tTable.size = 0;
+        tTable.hits = 0;
+        tTable.unwantedCollisions = 0;
+    }
 
-
+    public static void clearMovesFromTable(int moveCutoff) {
+        tTable.cleanTable(moveCutoff);
+    }
 
 
 
@@ -646,10 +610,7 @@ class Evaluate {
             evalFormatted = evalFormatted + ((int)(evaluation + 1)/2);
         }
         else {
-            if (evaluation < 0)
-                evalFormatted = (Double.toString(evaluation) + "0000000").substring(0, 8);
-            else
-                evalFormatted = (Double.toString(evaluation) + "0000000").substring(0, 7);
+            return String.format("%.5f", evaluation);
         }
         return evalFormatted;
     }
@@ -664,22 +625,14 @@ class Evaluate {
                     throw new IllegalArgumentException("CANNOT ACCESS POSITION IF NULL");
                 }
                 pos.makeMove(m);
-                List<Move> legalMoves = pos.legalMoves();
-                double posStatus = pos.positionStatus();
-                if (posStatus == 1) { //Checkmate
-                    moveVals[index] = WIN_EVAL; //checkmate
-                }
-                if (pos.positionStatus.inCheck) {
-                    moveVals[index] += 2;
-                }
-                if (m.capturedPiece != null) {
-                    moveVals[index] += m.capturedPiece.pieceMaterialValue;
-                }
-                moveVals[index] += (20.0 / (double)legalMoves.size());
-                index++;
+                moveVals[index] = evaluatePosition(pos);
                 pos.undoMove();
+                index++;
             }
-            return (int)(1000 * (moveVals[1] - moveVals[0]));
+            if (m1.color == Color.WHITE)
+                return (int)(1000 * (moveVals[1] - moveVals[0]));
+            return (int)(1000 * (moveVals[0] - moveVals[1]));
+
         }
     }
 
@@ -694,7 +647,9 @@ class Evaluate {
                 }
                 index++;
             }
-            return (int)(100 * (moveVals[1] - moveVals[0]));
+            if (m1.color == Color.WHITE)
+                return (int)(1000 * (moveVals[1] - moveVals[0]));
+            return (int)(1000 * (moveVals[0] - moveVals[1]));
         }
     }
 
