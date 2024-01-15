@@ -826,7 +826,7 @@ class Position {
     private void checkBasicDraws() {
         //TO DO: THREEFOLD REPETITION
         //FIFTY MOVE RULE
-        if (halfmoveClock == 100) {
+        if (halfmoveClock >= 100) {
             positionStatus.status = PositionStatus.Status.FIFTY_MOVE;
             gameOver = true;
         }

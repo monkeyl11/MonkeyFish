@@ -18,19 +18,15 @@ class Main {
     protected static final byte bitmaskFile = 0b00111000;
     
     public static void main(String[] args){
-        // HashSet<Long> seenHashes = new HashSet<>();
-        // Position p = new Position(true);
-        // TranspositionTable t = new TranspositionTable(3);
-        // t.addEntry(p, 2.0, 5, 1);
-        // Random r = new Random(0);
-        // for (Move m: p.legalMoves()) {
-        //     p.makeMove(m);
-        //     t.addEntry(p, r.nextInt() % 10, r.nextInt() % 10, r.nextInt() % 5);
-        //     p.undoMove();
-        // }
-        // System.out.println(t);
-        // t.cleanTable(0);
-        // System.out.println("\n\n\n\n" + t);
+        PeSTO.initTables();
+        // System.out.println(new Position("r1b1kbnr/2p2ppp/p1p5/3p4/3P2q1/2N1P1P1/PPP2P1P/R1BQ1RK1 w kq - 3 10").getTTHash());
+        // Position p = new Position("r1b1kbnr/2pp1ppp/p1p2q2/4N3/8/2N1P3/PPPP1PPP/R1BQK2R b KQkq - 0 6");
+        // Node<String> root = new Node<>();
+        // root.children = new ArrayList<>();
+        //System.out.println((p.activeColor == Color.WHITE ? 1 : -1) * Evaluate.quiesce(-Double.MAX_VALUE, Double.MAX_VALUE, p, root));
+        //System.out.println(Evaluate.evaluatePosition(p));
+
+        
 
         // System.out.println(Long.toBinaryString(p.getTTHash()));
         // p.makeMove("e4");
@@ -78,20 +74,20 @@ class Main {
 
         // stopwatch.reset();
 
-        // Position p2 = new Position("r4r2/1pp2p2/4pNkp/1b1p4/p2P3R/2P2RP1/1P1K1PP1/8 b - - 5 29");
+        // Position p2 = new Position("r1b1kbnr/2p2ppp/p1p2q2/3pp3/8/2N1PNP1/PPPP1P1P/R1BQK2R w KQkq d6 0 7");
         // Move[] bestMove2 = new Move[1];
         // Node<String> root2 = new Node<String>();
         // root2.children = new ArrayList<>();
         // double evaluation2 = 0;
         // double nodeDepth = 1000;
-        // while (stopwatch.time() < 1) {
+        // while (stopwatch.time() < 3) {
+        //     root2 = new Node<String>();
+        //     root2.children = new ArrayList<>();
         //     stopwatch.start();
         //     evaluation2 = Evaluate.evalNodeCountDebug(p2, nodeDepth, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove2, 0, 0, null, root2);
         //     nodeDepth *= 10;
         //     stopwatch.stop();
-        //     System.out.println("TRYING " + nodeDepth);
-        //     root2 = new Node<String>();
-        //     root2.children = new ArrayList<>();
+        //     System.out.println("ATTEMPTING " + nodeDepth);
         // }
         
         // System.out.println("EVALUATION: " + Evaluate.formatEval(evaluation2));
@@ -99,18 +95,19 @@ class Main {
         // System.out.println("TOTAL TIME: " + stopwatch.time());
         // //System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
         // //System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
+        // System.out.println("CALLS TO QUIESCE: " + Evaluate.quiesce_calls);
         // System.out.println("TIME SPENT EVALUATING POSITIONS: " + Evaluate.s3.time());
         // System.out.println("TOTAL LEAF NODES EVALUATED: " + Evaluate.total_nodes);
         // System.out.println("MAX DEPTH SEARCHED: " + Evaluate.maxDepth);
 
-        // System.out.println("Transposition Table Size: " + TranspositionTable.size);
-        // System.out.println("Transposition Table Unwanted Collisions: " + TranspositionTable.unwantedCollisions);
-        // System.out.println("Transposition Table Hits: " + TranspositionTable.hits);
+        // System.out.println("Transposition Table Size: " + Evaluate.qTable.size);
+        // System.out.println("Transposition Table Unwanted Collisions: " + Evaluate.qTable.unwantedCollisions);
+        // System.out.println("Transposition Table Hits: " + Evaluate.qTable.hits);
 
         // System.out.println(bestMove2[0]);
 
-        // Position p = new Position("r1b2rk1/1ppp1ppp/p7/3nP3/P1Qn4/2P2NPB/R3PK1P/5R2 b - - 1 20");
-        // System.out.println(Evaluate.evaluatePosition(p));
+        //Position p = new Position("r1b2rk1/1ppp1ppp/p7/3nP3/P1Qn4/2P2NPB/R3PK1P/5R2 b - - 1 20");
+        //System.out.println(Evaluate.evaluatePosition(p));
 
         // double whiteWins = 0; double blackWins = 0;
         // for (int i = 0; i < 500; i++) {
@@ -120,16 +117,16 @@ class Main {
         //     else if (result == -1)
         //         blackWins++;
         //     else
+        //     {
         //         whiteWins += 0.5; blackWins += 0.5;
-        //     if (i % 10 == 9) {
-        //         System.out.println("GAME SCORE: " + whiteWins + " - " + blackWins);
         //     }
+        //     System.out.println("GAME SCORE: " + whiteWins + " - " + blackWins);
         // }
 
 
 
 
-        playEngine("6BK/6B1/8/8/4k3/8/8/8 w - - 0 1", false, false);
+       playEngine(null, false, false);
 
         // Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - - 0 28");
         // p.makeMove("Kd5");
@@ -157,7 +154,8 @@ class Main {
         }
         boolean oldEngineTurn = p.activeColor == Color.WHITE ? oldEngineIsWhite : !oldEngineIsWhite;
         while(true) {
-            p.isDrawn();
+            if (p.isDrawn())
+                break;
             p.legalMoves();
             if (p.positionStatus() != 0) {
                 break;
@@ -182,7 +180,7 @@ class Main {
             else
                 System.out.println("Engine evaluation: " + Evaluate.formatEval(eval));
             //System.out.println(p.toFEN());
-            //System.out.println(p.toFEN());
+            System.out.println(p.toFEN());
             System.out.println("Move played: " + move[0]);
             //System.out.println("Eval num used: " + baseLineEval);
             //System.out.println(p);
@@ -245,17 +243,16 @@ class Main {
                     root = new Node<>();
                     root.children = new ArrayList<Node<String>>();
                     s.start();
-                    eval = Evaluate.evalNodeCountDebug(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, 0, null, root);
+                    eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, 0, null);
                     s.stop();
                     baseLineEval *= 10;
                 }
-                long prevSize = TranspositionTable.size;
-                System.out.println("TABLE SIZE: " + TranspositionTable.size);
+                long prevSize = Evaluate.tTable.size;
+                System.out.println("TABLE SIZE: " + Evaluate.tTable.size);
                 System.out.println("Engine evaluation: " + Evaluate.formatEval(eval));
                 System.out.println("Engine plays " + move[0]);
-                if (p.turn > 6)
-                    Evaluate.clearMovesFromTable(p.turn - 6);
-                System.out.println((prevSize - TranspositionTable.size) + " moves cleared from the table");
+                System.out.println("Eval nodenum used: " + baseLineEval);
+                System.out.println((prevSize - Evaluate.tTable.size) + " moves cleared from the table");
                 //System.out.println("Eval num used: " + baseLineEval);
                 //System.out.println(p);
                 p.makeMove(move[0]);

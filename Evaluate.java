@@ -21,9 +21,11 @@ class Evaluate {
     private static final double ISOLATED_PAWN_MULTIPLIER_BONUS = -0.1;
 
     public static TranspositionTable tTable = new TranspositionTable();
+    public static TranspositionTable qTable = new TranspositionTable(22);
 
     public static long total_nodes = 0;
     public static long total_eval_calls = 0;
+    public static long quiesce_calls = 0;
 
     public static Stopwatch s = new Stopwatch();
     public static Stopwatch s2 = new Stopwatch();
@@ -118,9 +120,14 @@ class Evaluate {
         if (p.isDrawn()) {
             return 0;
         }
-        if (nodeDepth < 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
-            double eval = evaluatePosition(p);
-            return eval + (eval > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
+        if (nodeDepth < 1) {
+            if (move.capturedPiece == null) {
+                double eval = evaluatePosition(p);
+                return eval + (eval > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
+            }
+            else {
+                return (p.activeColor == Color.WHITE ? 1 : -1) * quiesce(-Double.MAX_VALUE, Double.MAX_VALUE, p);
+            }
         }
         nodeDepth = nodeDepth > 1 ? nodeDepth : 1;
         // if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
@@ -164,7 +171,6 @@ class Evaluate {
                 alpha = Math.max(maxEval, alpha);
                 p.undoMove();
                 if (maxEval >= beta) {
-                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
@@ -189,7 +195,6 @@ class Evaluate {
                 beta = Math.min(minEval, beta);
                 p.undoMove();
                 if (minEval <= alpha) {
-                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
@@ -208,9 +213,14 @@ class Evaluate {
         if (p.isDrawn()) {
             return 0;
         }
-        if (nodeDepth < 1 && (move.capturedPiece == null || move.capturedPiece.pieceMaterialValue < 3)) {
-            double eval = evaluatePosition(p);
-            return eval + (eval > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
+        if (nodeDepth < 1) {
+            if (move.capturedPiece == null) {
+                double eval = evaluatePosition(p);
+                return eval + (eval > 0 ? -1 : 1) * depth * DEPTH_FACTOR;
+            }
+            else {
+                return (p.activeColor == Color.WHITE ? 1 : -1) * quiesce(-Double.MAX_VALUE, Double.MAX_VALUE, p);
+            }
         }
         nodeDepth = nodeDepth > 1 ? nodeDepth : 1;
         // if (nodeDepth <= 1 && Math.abs(posEval - prevEval) <= 1) {
@@ -258,7 +268,6 @@ class Evaluate {
                 alpha = Math.max(maxEval, alpha);
                 p.undoMove();
                 if (maxEval >= beta) {
-                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
@@ -287,13 +296,51 @@ class Evaluate {
                 beta = Math.min(minEval, beta);
                 p.undoMove();
                 if (minEval <= alpha) {
-                    tTable.addEntry(p, eval, nodeDepth, p.turn);
                     break;
                 }
             }
             tTable.addEntry(p, minEval, nodeDepth, p.turn);
             return minEval;
         }
+    }
+
+    //probably did this wrong lmao
+    //using negamax
+    public static double quiesce (double alpha, double beta, Position p) {
+        quiesce_calls++;
+        double tableEntry = qTable.getEntry(p, 1, p.turn);
+        if (tableEntry != Double.MAX_VALUE) {
+            return tableEntry;
+        }
+        double standPat = (p.activeColor == Color.WHITE ? 1 : -1) * evaluatePosition(p);
+        if (standPat >= beta) {
+            qTable.addEntry(p, alpha, 1, p.turn);
+            return beta;
+        }
+        if (standPat > alpha)
+            alpha = standPat;
+        double score = 0;
+        List<Move> legalMoves = p.legalMoves();
+        Collections.sort(legalMoves, new MoveComparatorDeep());
+        for (Move m: legalMoves) {
+            if (m.capturedPiece != null || m.promotionPiece != PieceID.NONE) {
+                p.makeMove(m);
+                // currNode.children.add(new Node<String>());
+                // Node<String> child = currNode.children.get(currNode.children.size() - 1);
+                // child.children = new ArrayList<Node<String>>();
+                score = -quiesce(-beta, -alpha, p);
+                p.undoMove();
+                // child.data = m.toString() + " " + Evaluate.formatEval(score);
+                if (score >= beta) {
+                    qTable.addEntry(p, beta, 1, p.turn);
+                    return beta;
+                }
+                if (score > alpha)
+                    alpha = score;
+            }
+        }
+        qTable.addEntry(p, alpha, 1, p.turn);
+        return alpha;
     }
 
 
@@ -312,16 +359,15 @@ class Evaluate {
         }
         double eval = 0;
         s3.start();
-        eval += evalBasicMaterial(p);
-        double positionalFactor = Math.pow(0.8, Math.abs(eval)); //lower positional evaluation weight if large material imbalance
-        eval += positionalFactor * evalPawns(p);
         double loneKingEval = evalLoneKingEndgame(p);
         if (loneKingEval != 0) {
             eval += loneKingEval;
+            eval += evalBasicMaterial(p);
         }
         else {
-            eval += positionalFactor * evalPieces(p);
+            eval += PeSTO.eval(p);
             eval += rightToMove(p);
+            eval += Math.pow(0.8, Math.abs(eval)) * evalPawns(p); //lower weight if serious material advantage/defecit
         }
         s3.stop();
         total_nodes++;
@@ -436,7 +482,6 @@ class Evaluate {
                 whitePawnsByFile.get(pFile).add(piece);
                 bonusPawnPts = EvalTables.PAWN_TABLE[EvalTables.tableConvWhite(piece.currentSquare)] / 100.0;
                 piece.pieceMaterialValue += bonusPawnPts;
-                eval += bonusPawnPts;
             } 
         }
         for (ChessPiece piece: p.blackPieces) {
@@ -445,7 +490,6 @@ class Evaluate {
                 blackPawnsByFile.get(pFile).add(piece);
                 bonusPawnPts = EvalTables.PAWN_TABLE[EvalTables.tableConvBlack(piece.currentSquare)] / 100.0;
                 piece.pieceMaterialValue += bonusPawnPts;
-                eval -= bonusPawnPts;
             } 
         }
 
@@ -647,9 +691,7 @@ class Evaluate {
                 }
                 index++;
             }
-            if (m1.color == Color.WHITE)
-                return (int)(1000 * (moveVals[1] - moveVals[0]));
-            return (int)(1000 * (moveVals[0] - moveVals[1]));
+            return (int)(1000 * (moveVals[1] - moveVals[0]));
         }
     }
 

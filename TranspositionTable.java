@@ -6,9 +6,9 @@ import java.util.*;
 class TranspositionTable {
     private final static int TT_DEFAULT_SIZE = 33554432;
     //used for debugging
-    public static long size = 0;
-    public static int hits = 0;
-    public static int unwantedCollisions = 0;
+    public long size = 0;
+    public int hits = 0;
+    public int unwantedCollisions = 0;
     private long maxSize;
     private int cutoff = 0;
 
@@ -50,6 +50,7 @@ class TranspositionTable {
                         currEntry.depth = depth;
                         currEntry.evaluation = evaluation;
                     }
+                    currEntry.moveNum = Math.max(currEntry.moveNum, moveNum);
                     break;
                 }
                 prevEntry = currEntry;
