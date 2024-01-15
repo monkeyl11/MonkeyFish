@@ -74,37 +74,37 @@ class Main {
 
         // stopwatch.reset();
 
-        // Position p2 = new Position("r1b1kbnr/2p2ppp/p1p2q2/3pp3/8/2N1PNP1/PPPP1P1P/R1BQK2R w KQkq d6 0 7");
-        // Move[] bestMove2 = new Move[1];
-        // Node<String> root2 = new Node<String>();
-        // root2.children = new ArrayList<>();
-        // double evaluation2 = 0;
-        // double nodeDepth = 1000;
-        // while (stopwatch.time() < 3) {
-        //     root2 = new Node<String>();
-        //     root2.children = new ArrayList<>();
-        //     stopwatch.start();
-        //     evaluation2 = Evaluate.evalNodeCountDebug(p2, nodeDepth, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove2, 0, 0, null, root2);
-        //     nodeDepth *= 10;
-        //     stopwatch.stop();
-        //     System.out.println("ATTEMPTING " + nodeDepth);
-        // }
+        Position p2 = new Position("r3r1k1/ppp1qpp1/1bn4p/3p4/3P3N/P1Q1P1P1/1P3PKP/R1B2R2 b - - 0 17");
+        Move[] bestMove2 = new Move[1];
+        Node<String> root2 = new Node<String>();
+        root2.children = new ArrayList<>();
+        double evaluation2 = 0;
+        double nodeDepth = 1000000;
+        while (stopwatch.time() < 1000) {
+            root2 = new Node<String>();
+            root2.children = new ArrayList<>();
+            stopwatch.start();
+            evaluation2 = Evaluate.evalNodeCountDebug(p2, nodeDepth, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove2, 0, 0, null, root2);
+            nodeDepth *= 4;
+            stopwatch.stop();
+            System.out.println("ATTEMPTING " + nodeDepth);
+        }
         
-        // System.out.println("EVALUATION: " + Evaluate.formatEval(evaluation2));
+        System.out.println("EVALUATION: " + Evaluate.formatEval(evaluation2));
 
-        // System.out.println("TOTAL TIME: " + stopwatch.time());
-        // //System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
-        // //System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
-        // System.out.println("CALLS TO QUIESCE: " + Evaluate.quiesce_calls);
-        // System.out.println("TIME SPENT EVALUATING POSITIONS: " + Evaluate.s3.time());
-        // System.out.println("TOTAL LEAF NODES EVALUATED: " + Evaluate.total_nodes);
-        // System.out.println("MAX DEPTH SEARCHED: " + Evaluate.maxDepth);
+        System.out.println("TOTAL TIME: " + stopwatch.time());
+        //System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
+        //System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
+        System.out.println("CALLS TO QUIESCE: " + Evaluate.quiesce_calls);
+        System.out.println("TIME SPENT EVALUATING POSITIONS: " + Evaluate.s3.time());
+        System.out.println("TOTAL LEAF NODES EVALUATED: " + Evaluate.total_nodes);
+        System.out.println("MAX DEPTH SEARCHED: " + Evaluate.maxDepth);
 
-        // System.out.println("Transposition Table Size: " + Evaluate.qTable.size);
-        // System.out.println("Transposition Table Unwanted Collisions: " + Evaluate.qTable.unwantedCollisions);
-        // System.out.println("Transposition Table Hits: " + Evaluate.qTable.hits);
+        System.out.println("Transposition Table Size: " + Evaluate.qTable.size);
+        System.out.println("Transposition Table Unwanted Collisions: " + Evaluate.qTable.unwantedCollisions);
+        System.out.println("Transposition Table Hits: " + Evaluate.qTable.hits);
 
-        // System.out.println(bestMove2[0]);
+        System.out.println(bestMove2[0]);
 
         //Position p = new Position("r1b2rk1/1ppp1ppp/p7/3nP3/P1Qn4/2P2NPB/R3PK1P/5R2 b - - 1 20");
         //System.out.println(Evaluate.evaluatePosition(p));
@@ -136,7 +136,7 @@ class Main {
         //System.out.println("size: " + p.legalMoves().size());
         //testCase("rnbqkb1r/pppppppp/8/8/4n3/3P4/PPPKPPPP/RNBQ1BNR w kq - 0 1", "a3");
         //testFENs();
-        runPlayerGames("./testcase_games/Harikrishna.pgn", false, -1);
+        //runPlayerGames("./testcase_games/Harikrishna.pgn", false, -1);
         //testAll();
         //testUndo(-1);
         //testAllUndo();
@@ -239,13 +239,15 @@ class Main {
                 double eval = 0;
 
                 Node<String> root = null;
-                while (s.time() < 3.5) {
+                double i = 1;
+                while (s.time() < 5) {
                     root = new Node<>();
                     root.children = new ArrayList<Node<String>>();
                     s.start();
                     eval = Evaluate.evalNodeCount(p, baseLineEval, -Double.MAX_VALUE, Double.MAX_VALUE, move, 0, 0, null);
                     s.stop();
-                    baseLineEval *= 10;
+                    baseLineEval *= ((20.0 / i) + 1);
+                    i++;
                 }
                 long prevSize = Evaluate.tTable.size;
                 System.out.println("TABLE SIZE: " + Evaluate.tTable.size);
