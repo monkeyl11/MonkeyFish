@@ -126,7 +126,7 @@ class Main {
 
 
 
-       playEngine(null, false, false);
+       //playEngine(null, false, false);
 
         // Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - - 0 28");
         // p.makeMove("Kd5");
@@ -136,7 +136,7 @@ class Main {
         //System.out.println("size: " + p.legalMoves().size());
         //testCase("rnbqkb1r/pppppppp/8/8/4n3/3P4/PPPKPPPP/RNBQ1BNR w kq - 0 1", "a3");
         //testFENs();
-        //runPlayerGames("./testcase_games/TorreRepetto.pgn", false, -1);
+        runPlayerGames("./testcase_games/Harikrishna.pgn", false, -1);
         //testAll();
         //testUndo(-1);
         //testAllUndo();

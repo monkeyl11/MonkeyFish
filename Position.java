@@ -39,6 +39,7 @@ class Position {
     private int[][] castlingRights; //0 for castling allowed, >0 = no castling, {{WK, WQ},{BK, BQ}}
     private Stack<Pawn> enPassantHistory; //for undoing moves
     private Stack<Integer> halfMoveHistory; //keeping track of halfmove counts
+    private HashMap<Long, int[]> threefoldTracker;
 
     public Stack<Move> prevMoves;
 
@@ -65,6 +66,7 @@ class Position {
         this.halfMoveHistory = new Stack<>();
         setUpPieceSets();
         initTTHash();
+        threefoldTracker = new HashMap<>();
     }
     
     public Position(boolean setUpBoard) {
@@ -79,6 +81,7 @@ class Position {
 
     public Position(String fen) {
         String[] fields = fen.split(" ");
+        threefoldTracker = new HashMap<>();
         
         //Field 1: Board setup
         b = new Board();
@@ -570,6 +573,15 @@ class Position {
         activeColor = activeColor == Color.WHITE ? Color.BLACK : Color.WHITE;
         positionStatus.nextMove();
         updateTTHash(m, false);
+        if (threefoldTracker.containsKey(this.TTHash)) {
+            int[] n = threefoldTracker.get(this.TTHash);
+            if (n[0] >= 2)
+                positionStatus.status = PositionStatus.Status.REPETITION;
+            n[0]++;
+        }
+        else {
+            threefoldTracker.put(this.TTHash, new int[]{1});
+        }
     }
 
     public boolean makeMove(String s) {
@@ -662,6 +674,10 @@ class Position {
         }
         positionStatus.prevMove();
         gameOver = false;
+        int[] n = threefoldTracker.get(this.TTHash);
+        n[0]--;
+        if (n[0] == 0)
+            threefoldTracker.remove(this.TTHash);
         updateTTHash(m, true);
     }
 
@@ -826,7 +842,10 @@ class Position {
     private void checkBasicDraws() {
         //TO DO: THREEFOLD REPETITION
         //FIFTY MOVE RULE
-        if (halfmoveClock >= 100) {
+        if (positionStatus.status == PositionStatus.Status.REPETITION) {
+            gameOver = true;
+        }
+        else if (halfmoveClock >= 100) {
             positionStatus.status = PositionStatus.Status.FIFTY_MOVE;
             gameOver = true;
         }
@@ -1088,6 +1107,11 @@ class Position {
     public boolean exactlyEquals(Position p) {
         if (p == this)
             return true;
+        
+        if (!threefoldEquals(p.threefoldTracker)) {
+            System.out.println(p.threefoldTracker);
+            System.out.println(this.threefoldTracker);
+        }
 
         return p.b.equals(this.b) && p.activeColor == this.activeColor 
                 && p.whitePieces.equals(this.whitePieces)
@@ -1099,7 +1123,20 @@ class Position {
                 && p.prevMoves.equals(this.prevMoves)
                 && p.turn == this.turn
                 && p.TTHash == this.TTHash
-                && p.halfmoveClock == this.halfmoveClock;
+                && p.halfmoveClock == this.halfmoveClock
+                && threefoldEquals(p.threefoldTracker);
+    }
+
+    public boolean threefoldEquals(HashMap<Long, int[]> other) {
+        if (this.threefoldTracker.size() != other.size())
+            return false;
+        for (Long key: this.threefoldTracker.keySet()) {
+            if (!other.containsKey(key))
+                return false;
+            if (other.get(key)[0] != this.threefoldTracker.get(key)[0])
+                return false;
+        }
+        return true;
     }
 
     //Strictly for debugging FEN Generation
