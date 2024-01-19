@@ -74,54 +74,54 @@ class Main {
 
         // stopwatch.reset();
 
-        Position p2 = new Position("r3r1k1/ppp1qpp1/1bn4p/3p4/3P3N/P1Q1P1P1/1P3PKP/R1B2R2 b - - 0 17");
-        Move[] bestMove2 = new Move[1];
-        Node<String> root2 = new Node<String>();
-        root2.children = new ArrayList<>();
-        double evaluation2 = 0;
-        double nodeDepth = 1000000;
-        while (stopwatch.time() < 1000) {
-            root2 = new Node<String>();
-            root2.children = new ArrayList<>();
-            stopwatch.start();
-            evaluation2 = Evaluate.evalNodeCountDebug(p2, nodeDepth, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove2, 0, 0, null, root2);
-            nodeDepth *= 4;
-            stopwatch.stop();
-            System.out.println("ATTEMPTING " + nodeDepth);
-        }
+        // Position p2 = new Position("r3r1k1/ppp1qpp1/1bn4p/3p4/3P3N/P1Q1P1P1/1P3PKP/R1B2R2 b - - 0 17");
+        // Move[] bestMove2 = new Move[1];
+        // Node<String> root2 = new Node<String>();
+        // root2.children = new ArrayList<>();
+        // double evaluation2 = 0;
+        // double nodeDepth = 1000000;
+        // while (stopwatch.time() < 1000) {
+        //     root2 = new Node<String>();
+        //     root2.children = new ArrayList<>();
+        //     stopwatch.start();
+        //     evaluation2 = Evaluate.evalNodeCountDebug(p2, nodeDepth, -Double.MAX_VALUE, Double.MAX_VALUE, bestMove2, 0, 0, null, root2);
+        //     nodeDepth *= 4;
+        //     stopwatch.stop();
+        //     System.out.println("ATTEMPTING " + nodeDepth);
+        // }
         
-        System.out.println("EVALUATION: " + Evaluate.formatEval(evaluation2));
+        // System.out.println("EVALUATION: " + Evaluate.formatEval(evaluation2));
 
-        System.out.println("TOTAL TIME: " + stopwatch.time());
-        //System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
-        //System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
-        System.out.println("CALLS TO QUIESCE: " + Evaluate.quiesce_calls);
-        System.out.println("TIME SPENT EVALUATING POSITIONS: " + Evaluate.s3.time());
-        System.out.println("TOTAL LEAF NODES EVALUATED: " + Evaluate.total_nodes);
-        System.out.println("MAX DEPTH SEARCHED: " + Evaluate.maxDepth);
+        // System.out.println("TOTAL TIME: " + stopwatch.time());
+        // //System.out.println("TIME SPENT GENERATING MOVES: " + Evaluate.s.time());
+        // //System.out.println("TIME SPENT MAKING MOVES: " + Evaluate.s2.time());
+        // System.out.println("CALLS TO QUIESCE: " + Evaluate.quiesce_calls);
+        // System.out.println("TIME SPENT EVALUATING POSITIONS: " + Evaluate.s3.time());
+        // System.out.println("TOTAL LEAF NODES EVALUATED: " + Evaluate.total_nodes);
+        // System.out.println("MAX DEPTH SEARCHED: " + Evaluate.maxDepth);
 
-        System.out.println("Transposition Table Size: " + Evaluate.qTable.size);
-        System.out.println("Transposition Table Unwanted Collisions: " + Evaluate.qTable.unwantedCollisions);
-        System.out.println("Transposition Table Hits: " + Evaluate.qTable.hits);
+        // System.out.println("Transposition Table Size: " + Evaluate.qTable.size);
+        // System.out.println("Transposition Table Unwanted Collisions: " + Evaluate.qTable.unwantedCollisions);
+        // System.out.println("Transposition Table Hits: " + Evaluate.qTable.hits);
 
-        System.out.println(bestMove2[0]);
+        // System.out.println(bestMove2[0]);
 
         //Position p = new Position("r1b2rk1/1ppp1ppp/p7/3nP3/P1Qn4/2P2NPB/R3PK1P/5R2 b - - 1 20");
         //System.out.println(Evaluate.evaluatePosition(p));
 
-        // double whiteWins = 0; double blackWins = 0;
-        // for (int i = 0; i < 500; i++) {
-        //     int result = engineCompare(null, true);
-        //     if (result == 1)
-        //         whiteWins++;
-        //     else if (result == -1)
-        //         blackWins++;
-        //     else
-        //     {
-        //         whiteWins += 0.5; blackWins += 0.5;
-        //     }
-        //     System.out.println("GAME SCORE: " + whiteWins + " - " + blackWins);
-        // }
+        double oldEngine = 0; double newEngine = 0;
+        for (int i = 0; i < 500; i++) {
+            int result = engineCompare(null, i % 2 == 0);
+            if ((result == 1 && i % 2 == 0) || (result == -1 && i % 2 == 1))
+                oldEngine++;
+            else if ((result == 1 && i % 2 == 1) || (result == -1 && i % 2 == 0))
+                newEngine++;
+            else
+            {
+                newEngine += 0.5; oldEngine += 0.5;
+            }
+            System.out.println("GAME SCORE NEW - OLD: " + newEngine + " - " + oldEngine);
+        }
 
 
 
@@ -145,6 +145,7 @@ class Main {
 
     public static int engineCompare(String fen, boolean oldEngineIsWhite) {
         Evaluate.resetTable();
+        EvaluateOld.resetTable();
         Position p = null;
         if (fen == null) {
             p = new Position(true);
@@ -175,10 +176,7 @@ class Main {
                 baseLineEval *= (6 + Math.random() * 8.0);
                 //System.out.println(baseLineEval);
             }
-            if (oldEngineTurn) 
-                System.out.println("Old Engine evaluation: " + Evaluate.formatEval(eval));
-            else
-                System.out.println("Engine evaluation: " + Evaluate.formatEval(eval));
+            System.out.println("Engine evaluation: " + Evaluate.formatEval(eval));
             //System.out.println(p.toFEN());
             System.out.println(p.toFEN());
             System.out.println("Move played: " + move[0]);

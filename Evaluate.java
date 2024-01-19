@@ -367,7 +367,7 @@ class Evaluate {
         else {
             eval += PeSTO.eval(p);
             eval += rightToMove(p);
-            eval += Math.pow(0.8, Math.abs(eval)) * evalPawns(p); //lower weight if serious material advantage/defecit
+            //eval += Math.pow(0.6, Math.abs(eval)) * evalPawns(p); //lower weight if serious material advantage/defecit
         }
         s3.stop();
         total_nodes++;
@@ -632,6 +632,10 @@ class Evaluate {
         tTable.size = 0;
         tTable.hits = 0;
         tTable.unwantedCollisions = 0;
+        qTable = new TranspositionTable();
+        qTable.size = 0;
+        qTable.hits = 0;
+        qTable.unwantedCollisions = 0;
     }
 
     public static void clearMovesFromTable(int moveCutoff) {
