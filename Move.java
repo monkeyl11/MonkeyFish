@@ -1,3 +1,5 @@
+import Enums.Color;
+import Enums.PieceID;
 
 class Move {
     public static final int LAST_RANK_WHITE = 7;

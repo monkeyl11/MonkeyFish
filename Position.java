@@ -1,5 +1,8 @@
 import java.util.*;
 
+import Enums.Color;
+import Enums.PieceID;
+
 
 class Position {
     //Using binary for now because im too lazy to use another enum, will change later

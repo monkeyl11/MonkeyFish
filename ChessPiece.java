@@ -1,5 +1,8 @@
 import java.util.*;
 
+import Enums.Color;
+import Enums.PieceID;
+
 abstract class ChessPiece {
 
     public PieceID id;

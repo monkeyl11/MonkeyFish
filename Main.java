@@ -8,6 +8,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject; 
 import org.json.simple.parser.*;
 
+import Enums.Color;
+
 
 class Main {
     private static Stopwatch stopwatch = new Stopwatch();
@@ -109,24 +111,24 @@ class Main {
         //Position p = new Position("r1b2rk1/1ppp1ppp/p7/3nP3/P1Qn4/2P2NPB/R3PK1P/5R2 b - - 1 20");
         //System.out.println(Evaluate.evaluatePosition(p));
 
-        double oldEngine = 0; double newEngine = 0;
-        for (int i = 0; i < 500; i++) {
-            int result = engineCompare(null, i % 2 == 0);
-            if ((result == 1 && i % 2 == 0) || (result == -1 && i % 2 == 1))
-                oldEngine++;
-            else if ((result == 1 && i % 2 == 1) || (result == -1 && i % 2 == 0))
-                newEngine++;
-            else
-            {
-                newEngine += 0.5; oldEngine += 0.5;
-            }
-            System.out.println("GAME SCORE NEW - OLD: " + newEngine + " - " + oldEngine);
-        }
+        // double oldEngine = 0; double newEngine = 0;
+        // for (int i = 0; i < 500; i++) {
+        //     int result = engineCompare(null, i % 2 == 0);
+        //     if ((result == 1 && i % 2 == 0) || (result == -1 && i % 2 == 1))
+        //         oldEngine++;
+        //     else if ((result == 1 && i % 2 == 1) || (result == -1 && i % 2 == 0))
+        //         newEngine++;
+        //     else
+        //     {
+        //         newEngine += 0.5; oldEngine += 0.5;
+        //     }
+        //     System.out.println("GAME SCORE NEW - OLD: " + newEngine + " - " + oldEngine);
+        // }
 
 
 
 
-       //playEngine(null, false, false);
+       playEngine(null, false, false);
 
         // Position p = new Position("8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - - 0 28");
         // p.makeMove("Kd5");
@@ -238,7 +240,7 @@ class Main {
 
                 Node<String> root = null;
                 double i = 1;
-                while (s.time() < 5) {
+                while (s.time() < 15) {
                     root = new Node<>();
                     root.children = new ArrayList<Node<String>>();
                     s.start();

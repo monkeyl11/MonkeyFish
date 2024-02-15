@@ -1,5 +1,8 @@
 import java.util.*;
 
+import Enums.Color;
+import Enums.PieceID;
+
 class Pawn extends ChessPiece {
     //private int enPassantTurn = 0; //tracks what turn pawn can be en-passanted, 0 means none
     private final static int FIRST_RANK_WHITE = 1;

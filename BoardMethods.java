@@ -1,4 +1,7 @@
 import java.util.*;
+
+import Enums.Color;
+import Enums.PieceID;
 //Mainly for debugging I think
 class BoardMethods {
     //being unnecessarily fancy here

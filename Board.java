@@ -1,3 +1,6 @@
+import Enums.Color;
+import Enums.PieceID;
+
 class Board {
     private static final byte bitmaskRank = 0b00000111;
     private static final byte bitmaskFile = 0b00111000;

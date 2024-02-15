@@ -1,5 +1,8 @@
 import java.util.*;
 
+import Enums.Color;
+import Enums.PieceID;
+
 class Rook extends ChessPiece {
     public boolean kingsideRook;
     public boolean queensideRook;

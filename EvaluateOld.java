@@ -1,5 +1,8 @@
 import java.util.*;
 
+import Enums.Color;
+import Enums.PieceID;
+
 class EvaluateOld {
     public final static double WIN_EVAL = 10000.0;
     private final static double DRAWN_EVAL = 0;
